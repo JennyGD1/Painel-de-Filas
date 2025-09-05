@@ -149,17 +149,34 @@ document.addEventListener('DOMContentLoaded', () => {
         operadoresIndisponiveis.sort((a, b) => new Date(a.calls[0].answered_time) - new Date(b.calls[0].answered_time));
 
         console.log("Conteúdo de 'ultimasChamadas' neste render:", ultimasChamadas);
-        
+
         operadoresLivres.sort((a, b) => {
+            // Última chamada (em ms) — se não existir, será 0
             const timeA = ultimasChamadas[a.id] || 0;
             const timeB = ultimasChamadas[b.id] || 0;
-            const aNaoAtendeu = timeA === 0;
-            const bNaoAtendeu = timeB === 0;
-            if (aNaoAtendeu && !bNaoAtendeu) return -1;
-            if (!aNaoAtendeu && bNaoAtendeu) return 1;
-            if (aNaoAtendeu && bNaoAtendeu) return new Date(a.login_start).getTime() - new Date(b.login_start).getTime();
-            return timeA - timeB;
+
+            const aSemUltima = timeA === 0;
+            const bSemUltima = timeB === 0;
+
+            // 1) Quem não tem última chamada vem primeiro
+            if (aSemUltima && !bSemUltima) return -1;
+            if (!aSemUltima && bSemUltima) return 1;
+
+            // 2) Se ambos NÃO têm última chamada -> ordena pelo login_start
+            // Queremos os que logaram mais RECENTEMENTE primeiro -> ordem decrescente
+            if (aSemUltima && bSemUltima) {
+                return new Date(b.login_start).getTime() - new Date(a.login_start).getTime();
+            }
+
+            // 3) Se ambos TÊM última chamada -> ordenar por quem está há mais tempo sem atender
+            // (última chamada mais antiga primeiro)
+            const diff = timeA - timeB;
+            if (diff !== 0) return diff;
+
+            // 4) Empate: fallback por tempo de login (mais antigo primeiro)
+            return new Date(a.login_start).getTime() - new Date(b.login_start).getTime();
         });
+
 
         // 3. ATUALIZAÇÃO DOS TOTAIS E DAS TABELAS VISUAIS
         document.getElementById('qtd-espera').innerText = chamadasEmEsperaDoGrupo.length;
