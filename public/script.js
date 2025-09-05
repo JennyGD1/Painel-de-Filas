@@ -5,24 +5,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const LIMITES_DE_PAUSA = { 'Almoço': 3600, 'Pausa nr17 - 10min': 600, 'Pausa nr17 - 20min': 1200, 'Feedback': 300 };
     let estadoAtualDoPainel = {};
     let ultimasChamadas = {}
-    let tempoSincronizadoDoServidor = 0;
+    let offsetServidor = 0;
     
     function formatarDuracaoHHMMSS(totalSegundos) { if (totalSegundos === null || isNaN(totalSegundos) || totalSegundos < 0) totalSegundos = 0; const h = Math.floor(totalSegundos / 3600); const m = Math.floor((totalSegundos % 3600) / 60); const s = Math.round(totalSegundos % 60); const pad = (num) => num.toString().padStart(2, '0'); return `${pad(h)}:${pad(m)}:${pad(s)}`; }
     function formatarTempoIndicador(segundos) { if (segundos === null || isNaN(segundos) || segundos < 0) segundos = 0; if (segundos >= 3600) return formatarDuracaoHHMMSS(segundos); const m = Math.floor(segundos / 60); const s = Math.round(segundos % 60); const pad = (num) => num.toString().padStart(2, '0'); return `${pad(m)}:${pad(s)}`; }
     function formatarTempo(timestamp) {
-        
-        if (!timestamp || tempoSincronizadoDoServidor === 0) {
-            return '00:00:00';
-        }
-        const agora = tempoSincronizadoDoServidor;
+        if (!timestamp) return '00:00:00';
+
+        const agora = Date.now() + offsetServidor;
         const inicio = new Date(timestamp).getTime();
         
         let segundos = Math.round((agora - inicio) / 1000);
         if (segundos < 0) {
             segundos = 0;
         }
+
         return formatarDuracaoHHMMSS(segundos);
-    }
+}
     const updateTable = (tbodyId, items, renderRowFunc, getItemId) => { const tbody = document.getElementById(tbodyId); if (!tbody) return; const itemIds = new Set(items.map(getItemId)); Array.from(tbody.children).forEach(row => { if (!itemIds.has(row.id)) tbody.removeChild(row); }); items.forEach(item => { const rowId = getItemId(item); let row = document.getElementById(rowId); if (!row) { row = document.createElement('tr'); row.id = rowId; row.classList.add('row-enter'); tbody.appendChild(row); } renderRowFunc(row, item); }); };
     function renderRowEspera(row, c, filas) { const tempoTotalSegundos = (Date.now() - new Date(c.start_time).getTime()) / 1000; row.classList.remove('vermelho', 'amarelo'); if (tempoTotalSegundos >= 30) { row.classList.add('vermelho'); } else if (tempoTotalSegundos >= 25) { row.classList.add('amarelo'); } const fila = filas[c.queue_id]; const nomeFila = fila ? fila.name : 'N/A'; row.innerHTML = `<td>${c.caller_number || 'Desconhecido'}</td><td>${nomeFila}</td><td>${formatarTempo(c.start_time)}</td>`; }
     function renderRowAtivas(row, c, agentes, filas) { const agente = agentes[c.agent_id]; const fila = filas[c.queue_id]; const tempoTotalSegundos = (Date.now() - new Date(c.answered_time).getTime()) / 1000; row.classList.remove('vermelho', 'amarelo'); if (tempoTotalSegundos >= 300) { row.classList.add('vermelho'); } else if (tempoTotalSegundos >= 240) { row.classList.add('amarelo'); } row.innerHTML = `<td><span class="info-operador">${agente ? agente.name : 'Desconhecido'}</span><span class="info-detalhe">${c.caller_number || 'N/A'}</span></td><td>${fila ? fila.name : 'N/A'}</td><td>${formatarTempo(c.answered_time)}</td>`; }
@@ -204,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 50);
     }
     
+    // Substitua sua função buscarDadosGerais por esta:
     async function buscarDadosGerais() {
         try {
             const response = await fetch(`/api/filas`);
@@ -211,9 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const responseData = await response.json();
             estadoAtualDoPainel = responseData.dados || {};
 
-            // ATUALIZAÇÃO: Guarda a hora exata do servidor quando os dados chegaram
+            // NOVO: Calcula a diferença entre a hora do servidor e a hora local
             if (estadoAtualDoPainel.server_time) {
-                tempoSincronizadoDoServidor = new Date(estadoAtualDoPainel.server_time).getTime();
+                const serverTime = new Date(estadoAtualDoPainel.server_time).getTime();
+                const clientTime = Date.now();
+                offsetServidor = serverTime - clientTime;
             }
 
         } catch (error) {
@@ -309,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         popularGrupos();
         await sequenciaDeCargaCompleta();
     
-        setInterval(buscarDadosGerais, 1000); 
+        setInterval(buscarDadosGerais, 3000); 
         setInterval(renderizarPainel, 1000);
         setInterval(buscarUltimasChamadas, 7000);
         
