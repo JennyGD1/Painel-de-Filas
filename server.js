@@ -47,6 +47,7 @@ app.get('/api/filas', async (req, res) => {
         const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
         const response = await axios.get(EVOLUX_REALTIME_URL, { headers });
         const data = response.data.data || {};
+        data.server_time = new Date().toISOString();
         realtimeCache.set(cacheKey, data);
         res.json({ dados: data });
     } catch (error) {
