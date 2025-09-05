@@ -138,39 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (agente.calls && agente.calls.length > 0) { operadoresIndisponiveis.push(agente); } 
             else { operadoresLivres.push(agente); }
         });
-
-        // NOVO BLOCO DE CÓDIGO COM A LÓGICA DE PRIORIDADE CORRETA
-        operadoresLivres.sort((a, b) => {
-            const timeA = ultimasChamadas[a.id] || 0; // 0 se não atendeu hoje
-            const timeB = ultimasChamadas[b.id] || 0; // 0 se não atendeu hoje
-
-            // REGRA 1: PRIORIZAR QUEM AINDA NÃO ATENDEU
-            const aNaoAtendeu = timeA === 0;
-            const bNaoAtendeu = timeB === 0;
-
-            // Se 'a' não atendeu e 'b' sim, 'a' vem primeiro (retorna -1).
-            if (aNaoAtendeu && !bNaoAtendeu) {
-                return -1;
-            }
-            // Se 'b' não atendeu e 'a' sim, 'b' vem primeiro (retorna 1).
-            if (!aNaoAtendeu && bNaoAtendeu) {
-                return 1;
-            }
-
-            // Se ambos estão na mesma categoria (ambos atenderam ou ambos não atenderam),
-            // aplicamos a regra de desempate de cada grupo.
-
-            // REGRA DE DESEMPATE PARA O GRUPO QUE NÃO ATENDEU
-            if (aNaoAtendeu && bNaoAtendeu) {
-                // Ordena por quem fez login mais cedo (menor timestamp de login vem primeiro)
-                return new Date(a.login_start).getTime() - new Date(b.login_start).getTime();
-            }
-
-            // REGRA DE DESEMPATE PARA O GRUPO QUE JÁ ATENDEU
-            // (O código só chega aqui se ambos !aNaoAtendeu e !bNaoAtendeu)
-            // Ordena por quem está ocioso há mais tempo (menor timestamp de última chamada vem primeiro)
-            return timeA - timeB;
-        });
         
         document.getElementById('qtd-espera').innerText = chamadasEmEsperaDoGrupo.length;
         document.getElementById('qtd-ativas').innerText = chamadasAtivasDoGrupo.length;
@@ -187,10 +154,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateTable('tabela-espera', chamadasEmEsperaDoGrupo.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)), (row, c) => renderRowEspera(row, c, todasFilas), c => `call-${c.uuid}`);
         updateTable('tabela-ativas', chamadasAtivasDoGrupo.sort((a, b) => new Date(a.answered_time) - new Date(b.answered_time)), (row, c) => renderRowAtivas(row, c, todosAgentes, todasFilas), c => `call-${c.uuid}`);
-        updateTable('tabela-pausados', operadoresPausados, renderRowPausados, a => `agent-${a.id}`);
-        updateTable('tabela-livres', operadoresLivres, renderRowLivres, a => `agent-${a.id}`);
+
+        updateTable('tabela-pausados', operadoresPausados.sort((a, b) => new Date(a.pause.pause_start).getTime() - new Date(b.pause.pause_start).getTime()), renderRowPausados, a => `agent-${a.id}`);
+
+        updateTable('tabela-livres', operadoresLivres.sort((a, b) => {
+            const timeA = ultimasChamadas[a.id] || 0;
+            const timeB = ultimasChamadas[b.id] || 0;
+            const aNaoAtendeu = timeA === 0;
+            const bNaoAtendeu = timeB === 0;
+            if (aNaoAtendeu && !bNaoAtendeu) return -1;
+            if (!aNaoAtendeu && bNaoAtendeu) return 1;
+            if (aNaoAtendeu && bNaoAtendeu) return new Date(a.login_start).getTime() - new Date(b.login_start).getTime();
+            return timeA - timeB;
+        }), renderRowLivres, a => `agent-${a.id}`);
+
         updateTable('tabela-indisponiveis', operadoresIndisponiveis.sort((a, b) => new Date(a.calls[0].answered_time) - new Date(b.calls[0].answered_time)), (row, a) => renderRowIndisponiveis(row, a, todasFilas), a => `agent-${a.id}`);
-    }
+        }
     
     function popularGrupos() { const select = document.getElementById("select-grupo"); select.innerHTML = ''; gruposDeFila.forEach(grupo => { const option = document.createElement("option"); option.value = grupo.name; option.innerText = grupo.name; select.appendChild(option); }); }
     function salvarPreferencias() { const checkboxes = document.querySelectorAll('#settings-dropdown input[type="checkbox"]'); const preferencias = {}; checkboxes.forEach(cb => { preferencias[cb.dataset.cardId] = cb.checked; }); localStorage.setItem('preferenciasVisibilidadePainel', JSON.stringify(preferencias)); }
