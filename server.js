@@ -152,10 +152,23 @@ app.get('/api/indicadores/abandono-dia', async (req, res) => {
     }
     try {
         const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
-        const agora = new Date();
-        const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
-        const fimDoDiaAtual = agora.toISOString();
-        const params = { start_date: inicioDoDia, end_date: fimDoDiaAtual, entity: 'queue_groups', queue_group_ids: grupo.groupId, group_by: 'day', start_hour: '07', end_hour: '19' };
+        const agoraUTC = new Date();
+        const agoraFortaleza = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
+        const year = agoraFortaleza.getUTCFullYear();
+        const month = agoraFortaleza.getUTCMonth();
+        const day = agoraFortaleza.getUTCDate();
+        const inicioDoDiaUTC = new Date(Date.UTC(year, month, day, 3, 0, 0));
+        
+        const params = {
+            start_date: inicioDoDiaUTC.toISOString(),
+            end_date: agoraUTC.toISOString(),
+            entity: 'queue_groups',
+            queue_group_ids: grupo.groupId,
+            group_by: 'day',
+            start_hour: '07', 
+            end_hour: '19'    
+        };
+        
         const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params });
         const totais = response.data.data.find(item => item.label === 'Total');
         const resultado = {
@@ -164,8 +177,8 @@ app.get('/api/indicadores/abandono-dia', async (req, res) => {
         abandonoDiaCache.set(cacheKey, resultado);
         res.json(resultado);
     } catch (error) {
-        console.error(`Erro na API de TMA/TME:`, error.response ? error.response.data : error.message);
-        res.status(500).json({ error: 'Falha ao buscar TMA/TME' });
+        console.error(`Erro na API de Abandono Dia:`, error.response ? error.response.data : error.message);
+        res.status(500).json({ error: 'Falha ao buscar abandono do dia' });
     }
 });
 
@@ -182,17 +195,35 @@ app.get('/api/indicadores/variacao', async (req, res) => {
     try {
         const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
         const getRate = async (start, end) => {
-            const params = { start_date: start, end_date: end, entity: 'queue_groups', queue_group_ids: grupo.groupId, group_by: 'day' };
+            
+            const params = {
+                start_date: start,
+                end_date: end,
+                entity: 'queue_groups',
+                queue_group_ids: grupo.groupId,
+                group_by: 'day',
+                start_hour: '07',
+                end_hour: '19'    
+            };
             const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params });
             const totais = response.data.data.find(item => item.label === 'Total');
             return totais ? (totais.abandoned_percent || 0) : 0;
         };
-        const agora = new Date();
-        const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
-        const fimDoDiaAtual = agora.toISOString();
-        const inicioHoraAtual = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), agora.getHours(), 0, 0).toISOString();
-        const taxaDiaAcumulado = await getRate(inicioDoDia, fimDoDiaAtual);
-        const taxaInicioHora = await getRate(inicioDoDia, inicioHoraAtual);
+        
+      
+        const agoraUTC = new Date();
+        const agoraFortaleza = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
+        const year = agoraFortaleza.getUTCFullYear();
+        const month = agoraFortaleza.getUTCMonth();
+        const day = agoraFortaleza.getUTCDate();
+        const inicioDoDiaUTC = new Date(Date.UTC(year, month, day, 3, 0, 0));
+        
+     
+        const inicioHoraAtualUTC = new Date(Date.UTC(year, month, day, agoraFortaleza.getUTCHours(), 0, 0));
+
+        const taxaDiaAcumulado = await getRate(inicioDoDiaUTC.toISOString(), agoraUTC.toISOString());
+        const taxaInicioHora = await getRate(inicioDoDiaUTC.toISOString(), inicioHoraAtualUTC.toISOString());
+        
         const resultado = {
             abandono_dia_acumulado: taxaDiaAcumulado,
             abandono_inicio_hora: taxaInicioHora
