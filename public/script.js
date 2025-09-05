@@ -32,9 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderizarPainel() {
 
-        if (tempoSincronizadoDoServidor > 0) {
-            tempoSincronizadoDoServidor += 1000;
-        }
+        
         const grupoSelecionadoNome = document.getElementById("select-grupo").value;
         const data = estadoAtualDoPainel;
         if (!data.agents || !grupoSelecionadoNome) return;
@@ -311,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         popularGrupos();
         await sequenciaDeCargaCompleta();
     
-        setInterval(buscarDadosGerais, 2000); 
+        setInterval(buscarDadosGerais, 1000); 
         setInterval(renderizarPainel, 1000);
         setInterval(buscarUltimasChamadas, 7000);
         
