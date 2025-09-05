@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ferramentas Maida Health</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="menu-style.css">
 </head>
 <body>
 
@@ -19,52 +19,121 @@
         <p class="subtitle">Soluções integradas para Call Center e Análise de Dados</p>
         
         <div class="features-grid">
-            
             <a href="/painel.html" class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-tasks"></i>
-                </div>
+                <div class="feature-icon"><i class="fas fa-tasks"></i></div>
                 <h3>Painel de Filas</h3>
-                <p>Monitoramento em tempo real das filas de atendimento, pausas e status dos operadores.</p>
+                <p>Monitoramento em tempo real das filas de atendimento.</p>
                 <div class="feature-badge">ATIVO</div>
             </a>
-            
             <div class="feature-card coming-soon">
-                <div class="feature-icon">
-                    <i class="fas fa-headset"></i>
-                </div>
+                <div class="feature-icon"><i class="fas fa-headset"></i></div>
                 <h3>Transcrição de Ligações</h3>
                 <p>Transcrição de ligações online sem necessidade de download.</p>
                 <div class="feature-badge">EM BREVE</div>
             </div>
-            
             <div class="feature-card coming-soon">
-                <div class="feature-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
                 <h3>Análise Avançada</h3>
-                <p>Em breve - Relatórios detalhados e comparações históricas.</p>
+                <p>Relatórios detalhados e comparações históricas.</p>
                 <div class="feature-badge">EM BREVE</div>
             </div>
+        </div>
 
+        <div class="solicitacao-container">
+            <button id="abrir-form-btn" class="solicitacao-btn">
+                <span class="icone"><i class="fas fa-chevron-down"></i></span>
+                <span class="texto">Solicitações</span>
+            </button>
         </div>
     </div>
 </main>
 
+<div id="form-modal-container" class="form-modal-container">
+    <div class="form-modal-content">
+        <button id="fechar-form-btn" class="fechar-form-btn">&times;</button>
+        <h2>Solicitar Nova Automação</h2>
+        <p>Preencha os campos abaixo para solicitar uma nova ferramenta ou funcionalidade.</p>
+        
+        <form id="google-form">
+            <div class="form-group">
+                <label for="nome-completo">Nome Completo</label>
+                <input type="text" id="nome-completo" name="entry.COLOQUE_O_ID_DO_NOME_AQUI" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email para Contato</label>
+                <input type="email" id="email" name="entry.COLOQUE_O_ID_DO_EMAIL_AQUI" required>
+            </div>
+            <div class="form-group">
+                <label for="setor">Setor / Departamento</label>
+                <input type="text" id="setor" name="entry.COLOQUE_O_ID_DO_SETOR_AQUI">
+            </div>
+
+            <div class="form-group">
+                <label for="regional">Regional</label>
+                <select id="regional" name="entry.COLOQUE_O_ID_DA_REGIONAL_AQUI" required>
+                    <option value="" disabled selected>Selecione uma opção</option>
+                    <option value="Nordeste">Nordeste</option>
+                    <option value="Centro-Oeste">Centro-Oeste</option>
+                    <option value="Bahia">Bahia</option>
+                    <option value="Santa Catarina">Santa Catarina</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="descricao">Descreva sua necessidade</label>
+                <textarea id="descricao" name="entry.COLOQUE_O_ID_DA_DESCRICAO_AQUI" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Enviar Solicitação</button>
+        </form>
+        <div id="form-success-message" style="display: none; color: green; margin-top: 15px;">
+            Sua solicitação foi enviada com sucesso!
+        </div>
+    </div>
+</div>
+
 <script>
-// Efeitos interativos para os cards
-document.querySelectorAll('.feature-card').forEach(card => {
-    card.addEventListener('mouseenter', () => {
-        // Aplica o efeito apenas se o card não estiver desabilitado
-        if(!card.classList.contains('coming-soon')) {
-            card.style.transform = 'translateY(-5px)';
-            card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
-        }
-    });
-    
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-        card.style.boxShadow = '';
+// (O SCRIPT CONTINUA EXATAMENTE O MESMO, NÃO PRECISA MUDAR NADA NELE)
+
+// Elementos do DOM
+const abrirBtn = document.getElementById('abrir-form-btn');
+const fecharBtn = document.getElementById('fechar-form-btn');
+const modalContainer = document.getElementById('form-modal-container');
+const form = document.getElementById('google-form');
+const successMessage = document.getElementById('form-success-message');
+
+// Abrir e fechar o modal
+abrirBtn.addEventListener('click', () => {
+    modalContainer.style.display = 'flex';
+});
+fecharBtn.addEventListener('click', () => {
+    modalContainer.style.display = 'none';
+});
+window.addEventListener('click', (event) => {
+    if (event.target == modalContainer) {
+        modalContainer.style.display = 'none';
+    }
+});
+
+// Enviar dados para o Google Forms
+form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formActionURL = 'https://docs.google.com/forms/d/1S4MxH5z6eHvpQ9zMvcsqipqpYRRzlD5Hx5eK7DkUQc8/edit';
+    const formData = new FormData(form);
+
+    fetch(formActionURL, {
+        method: 'POST',
+        body: formData,
+        mode: 'no-cors'
+    }).then(() => {
+        form.reset();
+        successMessage.style.display = 'block';
+        setTimeout(() => {
+            successMessage.style.display = 'none';
+            modalContainer.style.display = 'none';
+        }, 3000);
+    }).catch(error => {
+        console.error('Error:', error);
+        alert('Ocorreu um erro, mas sua solicitação pode ter sido enviada. Verifique a planilha.');
     });
 });
 </script>
