@@ -150,39 +150,18 @@ app.get('/api/indicadores/abandono-dia', async (req, res) => {
     if (abandonoDiaCache.has(cacheKey)) {
         return res.json(abandonoDiaCache.get(cacheKey));
     }
-        try {
+    try {
         const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
-
-        
-        const agoraUTC = new Date();
-        
-        
-        const agoraFortaleza = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
-
-        // Pega o ano, mês e dia com base na data de Fortaleza
-        const year = agoraFortaleza.getUTCFullYear();
-        const month = agoraFortaleza.getUTCMonth();
-        const day = agoraFortaleza.getUTCDate();
-
-        // Define o início do dia como meia-noite de Fortaleza, mas em formato UTC (03:00 UTC)
-        // A API da Evolux espera o formato UTC (com 'Z' no final)
-        const inicioDoDiaUTC = new Date(Date.UTC(year, month, day, 3, 0, 0));
-        
-        const params = {
-            start_date: inicioDoDiaUTC.toISOString(),
-            end_date: agoraUTC.toISOString(),
-            entity: 'queue_groups',
-            queue_group_ids: grupo.groupId,
-            group_by: 'day'
-        };
-
+        const agora = new Date();
+        const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
+        const fimDoDiaAtual = agora.toISOString();
+        const params = { start_date: inicioDoDia, end_date: fimDoDiaAtual, entity: 'queue_groups', queue_group_ids: grupo.groupId, group_by: 'day' };
         const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params });
         const totais = response.data.data.find(item => item.label === 'Total');
         const resultado = {
-            tma: totais ? totais.att || 0 : 0,
-            tme: totais ? totais.asa || 0 : 0,
+            abandono_dia_acumulado: totais ? (totais.abandoned_percent || 0) : 0,
         };
-        tmaTmeCache.set(cacheKey, resultado);
+        abandonoDiaCache.set(cacheKey, resultado);
         res.json(resultado);
     } catch (error) {
         console.error(`Erro na API de TMA/TME:`, error.response ? error.response.data : error.message);
