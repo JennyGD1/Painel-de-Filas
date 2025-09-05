@@ -44,14 +44,36 @@ document.addEventListener('DOMContentLoaded', () => {
             else { operadoresLivres.push(agente); }
         });
 
+        // NOVO BLOCO DE CÓDIGO COM A LÓGICA DE PRIORIDADE CORRETA
         operadoresLivres.sort((a, b) => {
-            const timeA = ultimasChamadas[a.id] || 0;
-            const timeB = ultimasChamadas[b.id] || 0;
-            if (timeA === 0 && timeB === 0) {
-                return new Date(b.login_start).getTime() - new Date(a.login_start).getTime();
+            const timeA = ultimasChamadas[a.id] || 0; // 0 se não atendeu hoje
+            const timeB = ultimasChamadas[b.id] || 0; // 0 se não atendeu hoje
+
+            // REGRA 1: PRIORIZAR QUEM AINDA NÃO ATENDEU
+            const aNaoAtendeu = timeA === 0;
+            const bNaoAtendeu = timeB === 0;
+
+            // Se 'a' não atendeu e 'b' sim, 'a' vem primeiro (retorna -1).
+            if (aNaoAtendeu && !bNaoAtendeu) {
+                return -1;
             }
-            if (timeA === 0) return 1;
-            if (timeB === 0) return -1;
+            // Se 'b' não atendeu e 'a' sim, 'b' vem primeiro (retorna 1).
+            if (!aNaoAtendeu && bNaoAtendeu) {
+                return 1;
+            }
+
+            // Se ambos estão na mesma categoria (ambos atenderam ou ambos não atenderam),
+            // aplicamos a regra de desempate de cada grupo.
+
+            // REGRA DE DESEMPATE PARA O GRUPO QUE NÃO ATENDEU
+            if (aNaoAtendeu && bNaoAtendeu) {
+                // Ordena por quem fez login mais cedo (menor timestamp de login vem primeiro)
+                return new Date(a.login_start).getTime() - new Date(b.login_start).getTime();
+            }
+
+            // REGRA DE DESEMPATE PARA O GRUPO QUE JÁ ATENDEU
+            // (O código só chega aqui se ambos !aNaoAtendeu e !bNaoAtendeu)
+            // Ordena por quem está ocioso há mais tempo (menor timestamp de última chamada vem primeiro)
             return timeA - timeB;
         });
         
