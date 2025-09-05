@@ -9,7 +9,7 @@
 }
 
 body {
-    background-color: #f4f7fc;
+    background-color: var(--maida-azul);
     font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
