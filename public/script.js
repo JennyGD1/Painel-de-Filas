@@ -31,6 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderRowIndisponiveis(row, a, filas) { const chamada = a.calls[0]; const filaDaChamada = filas[chamada.queue_id]; const nomeFila = filaDaChamada ? filaDaChamada.name : 'Desconhecida'; row.innerHTML = `<td>${a.name}</td><td>${nomeFila}</td><td>${formatarTempo(chamada.answered_time)}</td>`; }
     
     function renderizarPainel() {
+
+        if (tempoSincronizadoDoServidor > 0) {
+            tempoSincronizadoDoServidor += 1000;
+        }
         const grupoSelecionadoNome = document.getElementById("select-grupo").value;
         const data = estadoAtualDoPainel;
         if (!data.agents || !grupoSelecionadoNome) return;
@@ -307,14 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
         popularGrupos();
         await sequenciaDeCargaCompleta();
     
-        setInterval(buscarDadosGerais, 1000); 
+        setInterval(buscarDadosGerais, 2000); 
         setInterval(renderizarPainel, 1000);
         setInterval(buscarUltimasChamadas, 7000);
-        setInterval(() => {
-            if (tempoSincronizadoDoServidor > 0) {
-                tempoSincronizadoDoServidor += 1000;
-            }
-        }, 1000);
         
         // NOVOS INTERVALOS DE ATUALIZAÇÃO
         setInterval(carregarTmaTme, 30000);             // 1 minuto
