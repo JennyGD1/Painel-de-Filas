@@ -147,23 +147,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("Conteúdo de 'ultimasChamadas' neste render:", ultimasChamadas);
 
-        operadoresLivres.sort((a, b) => {
-            
-            const timeA = ultimasChamadas[a.id] || 0;
-            const timeB = ultimasChamadas[b.id] || 0;
+    operadoresLivres.sort((a, b) => {
+        const timeA = ultimasChamadas[a.id] || 0;
+        const timeB = ultimasChamadas[b.id] || 0;
 
-            const aSemUltima = timeA === 0;
-            const bSemUltima = timeB === 0;
+        const aNaoAtendeu = timeA === 0;
+        const bNaoAtendeu = timeB === 0;
 
-            if (aSemUltima && !bSemUltima) return -1;
-            if (!aSemUltima && bSemUltima) return 1;
+        if (aNaoAtendeu && !bNaoAtendeu) {
+            return -1; 
+        }
 
-            if (!aSemUltima && !bSemUltima) {
-                return timeA - timeB;
-            }
+        if (!aNaoAtendeu && bNaoAtendeu) {
+            return 1; 
+        }
 
-            return 0;
-        });
+        if (!aNaoAtendeu && !bNaoAtendeu) {
+
+            return timeA - timeB;
+        }
+
+        return 0;
+    });
 
 
         // 3. ATUALIZAÇÃO DOS TOTAIS E DAS TABELAS VISUAIS
