@@ -1,4 +1,4 @@
-// server.js (VERSÃO FINAL ATUALIZADA)
+
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -12,7 +12,7 @@ const EVOLUX_REALTIME_URL = 'https://maida.evolux.io/api/realtime/v1/queue';
 const EVOLUX_REPORTS_URL = 'https://maida.evolux.io/api/v1/report/answered_abandoned_sla';
 const EVOLUX_CALLS_REPORT_URL = 'https://maida.evolux.io/api/v1/report/calls_history';
 
-// CACHES SEPARADOS PARA CADA INTERVALO
+// CACHES SEPARADOS
 const realtimeCache = new NodeCache({ stdTTL: 3, checkperiod: 5 });
 const lastCallsCache = new NodeCache({ stdTTL: 10, checkperiod: 15 });
 const tmaTmeCache = new NodeCache({ stdTTL: 60, checkperiod: 70 });            // Cache de 1 MINUTO
