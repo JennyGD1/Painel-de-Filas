@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 3) Se ambos TÊM última chamada -> ordenar por quem está há mais tempo sem atender
             // (última chamada mais antiga primeiro)
-            const diff = timeA - timeB;
+            const diff = timeB - timeA; 
             if (diff !== 0) return diff;
 
             // 4) Empate: fallback por tempo de login (mais antigo primeiro)
