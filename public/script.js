@@ -109,55 +109,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function renderRowIndisponiveis(row, a, filas) { const chamada = a.calls[0]; const filaDaChamada = filas[chamada.queue_id]; const nomeFila = filaDaChamada ? filaDaChamada.name : 'Desconhecida'; row.innerHTML = `<td>${a.name}</td><td>${nomeFila}</td><td>${formatarTempo(chamada.answered_time)}</td>`; }
     
+// Substitua sua função renderizarPainel inteira por esta versão corrigida:
     function renderizarPainel() {
-        
-        const agora = getCurrentTime();
         const grupoSelecionadoNome = document.getElementById("select-grupo").value;
         const data = estadoAtualDoPainel;
         if (!data.agents || !grupoSelecionadoNome) return;
 
+        // 1. FILTRAGEM DOS DADOS (como já estava)
         const todosAgentes = data.agents;
         const todasChamadas = data.calls ? Object.values(data.calls) : [];
         const todasFilas = data.queues || {};
         const grupoSelecionado = gruposDeFila.find(g => g.name === grupoSelecionadoNome);
         if (!grupoSelecionado) return;
-        const idsDasFilasDoGrupo = new Set(grupoSelecionado.queueIds);
+        const idsDasFilasDoGrupo =
+         new Set(grupoSelecionado.queueIds);
         let agentesDoGrupoIds = new Set();
         grupoSelecionado.queueIds.forEach(queueId => { if (todasFilas[queueId] && todasFilas[queueId].agent_ids) { todasFilas[queueId].agent_ids.forEach(agentId => agentesDoGrupoIds.add(String(agentId))); } });
+        
         const chamadasEmEsperaDoGrupo = todasChamadas.filter(c => c.state === 'ringing' && idsDasFilasDoGrupo.has(c.queue_id));
         const chamadasAtivasDoGrupo = todasChamadas.filter(c => c.state === 'talking' && idsDasFilasDoGrupo.has(c.queue_id));
         const agentesEmChamadaNoGrupoIds = new Set(chamadasAtivasDoGrupo.map(c => String(c.agent_id)));
+        
         const operadoresPausados = [];
         const operadoresIndisponiveis = [];
         let operadoresLivres = [];
         agentesDoGrupoIds.forEach(agentId => {
             const agente = todosAgentes[agentId];
             if (!agente || !agente.logged) return;
-            if (agentesEmChamadaNoGrupoIds.has(String(agente.id))) {} 
-            else if (agente.pause && Object.keys(agente.pause).length > 0) { operadoresPausados.push(agente); } 
-            else if (agente.calls && agente.calls.length > 0) { operadoresIndisponiveis.push(agente); } 
+            if (agentesEmChamadaNoGrupoIds.has(String(agente.id))) {}
+            else if (agente.pause && Object.keys(agente.pause).length > 0) { operadoresPausados.push(agente); }
+            else if (agente.calls && agente.calls.length > 0) { operadoresIndisponiveis.push(agente); }
             else { operadoresLivres.push(agente); }
         });
-        
-        document.getElementById('qtd-espera').innerText = chamadasEmEsperaDoGrupo.length;
-        document.getElementById('qtd-ativas').innerText = chamadasAtivasDoGrupo.length;
-        document.getElementById('qtd-pausados').innerText = operadoresPausados.length;
-        document.getElementById('qtd-livres').innerText = operadoresLivres.length;
-        const qtdIndisponiveisEl = document.getElementById('qtd-indisponiveis');
-        if (qtdIndisponiveisEl) { qtdIndisponiveisEl.innerText = operadoresIndisponiveis.length; }
 
-        console.log("Dados para ordenar PAUSADOS:", operadoresPausados.map(op => ({
-            nome: op.name,
-            inicio_pausa: op.pause.pause_start,
-            timestamp_ms: new Date(op.pause.pause_start).getTime()
-        })));
+        // 2. ORDENAÇÃO DE TODAS AS LISTAS
+        chamadasEmEsperaDoGrupo.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+        chamadasAtivasDoGrupo.sort((a, b) => new Date(a.answered_time) - new Date(b.answered_time));
+        operadoresPausados.sort((a, b) => new Date(a.pause.pause_start).getTime() - new Date(b.pause.pause_start).getTime());
+        operadoresIndisponiveis.sort((a, b) => new Date(a.calls[0].answered_time) - new Date(b.calls[0].answered_time));
 
-        updateTable('tabela-espera', chamadasEmEsperaDoGrupo.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)), (row, c) => renderRowEspera(row, c, todasFilas), c => `call-${c.uuid}`);
-        updateTable('tabela-ativas', chamadasAtivasDoGrupo.sort((a, b) => new Date(a.answered_time) - new Date(b.answered_time)), (row, c) => renderRowAtivas(row, c, todosAgentes, todasFilas), c => `call-${c.uuid}`);
-
-        updateTable('tabela-pausados', operadoresPausados.sort((a, b) => new Date(a.pause.pause_start).getTime() - new Date(b.pause.pause_start).getTime()), renderRowPausados, a => `agent-${a.id}`);
-
-        updateTable('tabela-livres', operadoresLivres.sort((a, b) => {
+        operadoresLivres.sort((a, b) => {
             const timeA = ultimasChamadas[a.id] || 0;
             const timeB = ultimasChamadas[b.id] || 0;
             const aNaoAtendeu = timeA === 0;
@@ -166,11 +157,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!aNaoAtendeu && bNaoAtendeu) return 1;
             if (aNaoAtendeu && bNaoAtendeu) return new Date(a.login_start).getTime() - new Date(b.login_start).getTime();
             return timeA - timeB;
-        }), renderRowLivres, a => `agent-${a.id}`);
+        });
 
-        updateTable('tabela-indisponiveis', operadoresIndisponiveis.sort((a, b) => new Date(a.calls[0].answered_time) - new Date(b.calls[0].answered_time)), (row, a) => renderRowIndisponiveis(row, a, todasFilas), a => `agent-${a.id}`);
-        }
-    
+        // 3. ATUALIZAÇÃO DOS TOTAIS E DAS TABELAS VISUAIS
+        document.getElementById('qtd-espera').innerText = chamadasEmEsperaDoGrupo.length;
+        document.getElementById('qtd-ativas').innerText = chamadasAtivasDoGrupo.length;
+        document.getElementById('qtd-pausados').innerText = operadoresPausados.length;
+        document.getElementById('qtd-livres').innerText = operadoresLivres.length;
+        const qtdIndisponiveisEl = document.getElementById('qtd-indisponiveis');
+        if (qtdIndisponiveisEl) { qtdIndisponiveisEl.innerText = operadoresIndisponiveis.length; }
+
+        updateTable('tabela-espera', chamadasEmEsperaDoGrupo, (row, c) => renderRowEspera(row, c, todasFilas), c => `call-${c.uuid}`);
+        updateTable('tabela-ativas', chamadasAtivasDoGrupo, (row, c) => renderRowAtivas(row, c, todosAgentes, todasFilas), c => `call-${c.uuid}`);
+        updateTable('tabela-pausados', operadoresPausados, renderRowPausados, a => `agent-${a.id}`);
+        // CORREÇÃO: A linha abaixo estava faltando/quebrada
+        updateTable('tabela-livres', operadoresLivres, renderRowLivres, a => `agent-${a.id}`);
+        updateTable('tabela-indisponiveis', operadoresIndisponiveis, (row, a) => renderRowIndisponiveis(row, a, todasFilas), a => `agent-${a.id}`);
+    }
     function popularGrupos() { const select = document.getElementById("select-grupo"); select.innerHTML = ''; gruposDeFila.forEach(grupo => { const option = document.createElement("option"); option.value = grupo.name; option.innerText = grupo.name; select.appendChild(option); }); }
     function salvarPreferencias() { const checkboxes = document.querySelectorAll('#settings-dropdown input[type="checkbox"]'); const preferencias = {}; checkboxes.forEach(cb => { preferencias[cb.dataset.cardId] = cb.checked; }); localStorage.setItem('preferenciasVisibilidadePainel', JSON.stringify(preferencias)); }
     
