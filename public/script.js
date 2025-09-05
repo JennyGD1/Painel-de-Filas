@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // NOVOS INTERVALOS DE ATUALIZAÇÃO
         setInterval(carregarTmaTme, 60000);             // 1 minuto
-        setInterval(carregarAbandonoDia, 3600000);      // 1 hora
+        setInterval(carregarAbandonoDia, 60000);      // 1 minuto
         setInterval(carregarVariacaoAbandono, 300000);  // 5 minutos
     }
 
