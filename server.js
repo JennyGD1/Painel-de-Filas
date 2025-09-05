@@ -195,7 +195,6 @@ app.get('/api/indicadores/variacao', async (req, res) => {
     try {
         const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
         const getRate = async (start, end) => {
-            
             const params = {
                 start_date: start,
                 end_date: end,
@@ -203,14 +202,14 @@ app.get('/api/indicadores/variacao', async (req, res) => {
                 queue_group_ids: grupo.groupId,
                 group_by: 'day',
                 start_hour: '07',
-                end_hour: '19'    
+                end_hour: '19'
             };
             const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params });
             const totais = response.data.data.find(item => item.label === 'Total');
             return totais ? (totais.abandoned_percent || 0) : 0;
         };
         
-      
+        // Pega a data/hora atual em UTC e define o início do dia em UTC-3
         const agoraUTC = new Date();
         const agoraFortaleza = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
         const year = agoraFortaleza.getUTCFullYear();
@@ -218,16 +217,21 @@ app.get('/api/indicadores/variacao', async (req, res) => {
         const day = agoraFortaleza.getUTCDate();
         const inicioDoDiaUTC = new Date(Date.UTC(year, month, day, 3, 0, 0));
         
-     
-        const inicioHoraAtualUTC = new Date(Date.UTC(year, month, day, agoraFortaleza.getUTCHours(), 0, 0));
+        // Em vez de "início da hora", calculamos "exatamente uma hora atrás"
+        const umaHoraAtrasUTC = new Date(agoraUTC.getTime() - (1 * 60 * 60 * 1000));
 
+        // Calcula a taxa de abandono acumulada até agora
         const taxaDiaAcumulado = await getRate(inicioDoDiaUTC.toISOString(), agoraUTC.toISOString());
-        const taxaInicioHora = await getRate(inicioDoDiaUTC.toISOString(), inicioHoraAtualUTC.toISOString());
+        
+        // Calcula a taxa de abandono acumulada até UMA HORA ATRÁS
+        const taxaUmaHoraAtras = await getRate(inicioDoDiaUTC.toISOString(), umaHoraAtrasUTC.toISOString());
         
         const resultado = {
             abandono_dia_acumulado: taxaDiaAcumulado,
-            abandono_inicio_hora: taxaInicioHora
+            // O frontend usará este valor como o ponto de referência anterior
+            abandono_inicio_hora: taxaUmaHoraAtras 
         };
+
         variationCache.set(cacheKey, resultado);
         res.json(resultado);
     } catch (error) {
