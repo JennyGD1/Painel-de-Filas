@@ -317,7 +317,41 @@ document.addEventListener('DOMContentLoaded', () => {
             ultimasChamadas = {}; 
         } 
     }
-
+    async function carregarTmaTme() {
+        const grupoSelecionado = document.getElementById("select-grupo").value;
+        console.log('📊 Carregando TMA/TME para grupo:', grupoSelecionado);
+        
+        if (!grupoSelecionado) {
+            console.warn('❌ Nenhum grupo selecionado para TMA/TME');
+            return;
+        }
+        
+        try {
+            const url = `/api/indicadores/tma-tme?grupo=${encodeURIComponent(grupoSelecionado)}`;
+            console.log('🔗 URL da requisição:', url);
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                console.error('❌ Erro na resposta da API TMA/TME:', response.status, response.statusText);
+                throw new Error(`Falha ao buscar TMA/TME - Status: ${response.status}`);
+            }
+            
+            const indicadores = await response.json();
+            console.log('📈 Dados recebidos TMA/TME:', indicadores);
+            
+            if (indicadores) {
+                document.getElementById('indicador-tma').innerText = formatarTempoIndicador(indicadores.tma);
+                document.getElementById('indicador-tme').innerText = formatarTempoIndicador(indicadores.tme);
+                console.log('✅ TMA/TME atualizados com sucesso');
+            }
+        } catch (error) {
+            console.error("❌ Erro ao carregar TMA/TME:", error);
+            document.getElementById('indicador-tma').innerText = 'Erro';
+            document.getElementById('indicador-tme').innerText = 'Erro';
+        }
+    }
+    // ADICIONE ESTA FUNÇÃO QUE ESTÁ FALTANDO - FUNÇÃO 1: Carrega apenas TMA e TME
     // NOVA FUNÇÃO 2: Carrega apenas o % de Abandono (Dia)
     async function carregarAbandonoDia() {
         const grupoSelecionado = document.getElementById("select-grupo").value;
