@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateTable('tabela-espera', chamadasEmEsperaDoGrupo.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)), (row, c) => renderRowEspera(row, c, todasFilas), c => `call-${c.uuid}`);
         updateTable('tabela-ativas', chamadasAtivasDoGrupo.sort((a, b) => new Date(a.answered_time) - new Date(b.answered_time)), (row, c) => renderRowAtivas(row, c, todosAgentes, todasFilas), c => `call-${c.uuid}`);
-        updateTable('tabela-pausados', operadoresPausados.sort((a, b) => new Date(a.pause.pause_start) - new Date(b.pause.pause_start)), renderRowPausados, a => `agent-${a.id}`);
+        updateTable('tabela-pausados', operadoresPausados, renderRowPausados, a => `agent-${a.id}`);
         updateTable('tabela-livres', operadoresLivres, renderRowLivres, a => `agent-${a.id}`);
         updateTable('tabela-indisponiveis', operadoresIndisponiveis.sort((a, b) => new Date(a.calls[0].answered_time) - new Date(b.calls[0].answered_time)), (row, a) => renderRowIndisponiveis(row, a, todasFilas), a => `agent-${a.id}`);
     }
