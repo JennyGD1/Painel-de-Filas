@@ -155,7 +155,7 @@ app.get('/api/indicadores/abandono-dia', async (req, res) => {
         const agora = new Date();
         const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
         const fimDoDiaAtual = agora.toISOString();
-        const params = { start_date: inicioDoDia, end_date: fimDoDiaAtual, entity: 'queue_groups', queue_group_ids: grupo.groupId, group_by: 'day' };
+        const params = { start_date: inicioDoDia, end_date: fimDoDiaAtual, entity: 'queue_groups', queue_group_ids: grupo.groupId, group_by: 'day', start_hour: '07', end_hour: '19' };
         const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params });
         const totais = response.data.data.find(item => item.label === 'Total');
         const resultado = {
