@@ -148,6 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
         operadoresPausados.sort((a, b) => new Date(a.pause.pause_start).getTime() - new Date(b.pause.pause_start).getTime());
         operadoresIndisponiveis.sort((a, b) => new Date(a.calls[0].answered_time) - new Date(b.calls[0].answered_time));
 
+        console.log("Conteúdo de 'ultimasChamadas' neste render:", ultimasChamadas);
+        
         operadoresLivres.sort((a, b) => {
             const timeA = ultimasChamadas[a.id] || 0;
             const timeB = ultimasChamadas[b.id] || 0;
