@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         setInterval(buscarDadosGerais, 3000); 
         setInterval(renderizarPainel, 1000);
-        setInterval(buscarUltimasChamadas, 10000);
+        setInterval(buscarUltimasChamadas, 7000);
         
         // NOVOS INTERVALOS DE ATUALIZAÇÃO
         setInterval(carregarTmaTme, 60000);             // 1 minuto
