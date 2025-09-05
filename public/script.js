@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         popularGrupos();
         await sequenciaDeCargaCompleta();
     
-        setInterval(buscarDadosGerais, 3000); 
+        setInterval(buscarDadosGerais, 1000); 
         setInterval(renderizarPainel, 1000);
         setInterval(buscarUltimasChamadas, 7000);
         setInterval(() => {
