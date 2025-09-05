@@ -237,44 +237,241 @@ main {
 }
 
 .form-modal-content h2 {
-    color: var(--maida-azul);
+    color: var(--maida-rosa);
     margin-top: 0;
 }
 
-/* Estilos dos Campos do Formulário */
+/* === ESTILOS PARA O BOTÃO E FORMULÁRIO DE SOLICITAÇÃO === */
+
+.solicitacao-container {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.solicitacao-btn {
+    background-color: var(--maida-azul);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex; /* Para centralizar o ícone */
+    align-items: center;
+    justify-content: center;
+}
+
+.solicitacao-btn .icone {
+    transition: opacity 0.3s ease;
+    font-size: 1.5rem;
+}
+
+.solicitacao-btn .texto {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-weight: bold;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.solicitacao-btn:hover {
+    border-radius: 30px;
+    width: 150px;
+    background-color: var(--maida-rosa); /* Muda a cor ao passar o mouse */
+}
+
+.solicitacao-btn:hover .icone {
+    opacity: 0;
+}
+
+.solicitacao-btn:hover .texto {
+    opacity: 1;
+}
+
+/* Estilos do Modal do Formulário */
+.form-modal-container {
+    display: none; /* Oculto por padrão */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+    -webkit-backdrop-filter: blur(5px); /* Efeito de blur no fundo */
+    backdrop-filter: blur(5px); /* Efeito de blur no fundo */
+}
+
+.form-modal-content {
+    background-color: #fff;
+    margin: auto;
+    padding: 30px 40px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 550px; /* Aumentado ligeiramente */
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2); /* Sombra mais suave */
+    animation: fadeInScale 0.4s ease-out forwards; /* Nova animação */
+}
+
+@keyframes fadeInScale {
+    from {opacity: 0; transform: scale(0.95);}
+    to {opacity: 1; transform: scale(1);}
+}
+
+.fechar-form-btn {
+    color: var(--texto-cinza);
+    position: absolute;
+    top: 18px;
+    right: 25px;
+    font-size: 32px; /* Maior e mais visível */
+    font-weight: lighter; /* Mais suave */
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: var(--transicao-padrao);
+}
+
+.fechar-form-btn:hover {
+    color: var(--maida-rosa); /* Cor da Maida */
+    transform: rotate(90deg); /* Efeito ao fechar */
+}
+
+.form-modal-content h2 {
+    color: var(--maida-azul);
+    margin-top: 0;
+    font-size: 2em; /* Título maior */
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.form-modal-content p {
+    text-align: center;
+    color: var(--texto-cinza);
+    margin-bottom: 30px;
+    font-size: 1.05em;
+}
+
+/* Estilos dos Campos do Formulário - Mais Modernos */
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px; /* Mais espaçamento entre campos */
+    text-align: left;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px; /* Mais espaçamento */
     font-weight: bold;
     color: var(--texto-escuro);
+    font-size: 0.95em;
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select { /* Adicionado o select aqui */
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    padding: 12px 15px; /* Mais padding */
+    border: 1px solid #dcdcdc; /* Borda mais clara */
+    border-radius: 10px; /* Borda mais arredondada */
     box-sizing: border-box;
+    font-size: 1em;
+    color: var(--texto-escuro);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-color: #fcfcfc; /* Fundo levemente off-white */
 }
 
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus { /* Estilo de foco */
+    border-color: var(--maida-azul);
+    box-shadow: 0 0 0 3px rgba(34, 74, 162, 0.2); /* Sombra azul suave */
+    outline: none; /* Remove o outline padrão */
+}
+
+/* Estilo específico para o SELECT para remover aparência antiquada */
+.form-group select {
+    appearance: none; /* Remove a seta padrão do sistema operacional */
+    -webkit-appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23224aa2" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Adiciona uma seta SVG personalizada */
+    background-repeat: no-repeat;
+    background-position: right 15px center; /* Posição da seta */
+    background-size: 20px; /* Tamanho da seta */
+    cursor: pointer;
+}
+
+.form-group select option {
+    color: var(--texto-escuro);
+    background-color: #fcfcfc;
+}
+
+
+/* Estilo para a opção desabilitada/selecionada por padrão */
+.form-group select option[disabled]:first-child {
+    color: #999; /* Cor mais suave para o placeholder */
+}
+
+
 .submit-btn {
-    background-color: var(--maida-rosa);
+    background-color: var(--maida-azul); /* Cor primária da Maida */
     color: white;
-    padding: 12px 20px;
+    padding: 14px 25px; /* Mais padding */
     border: none;
-    border-radius: 8px;
+    border-radius: 10px; /* Mais arredondado */
     cursor: pointer;
     width: 100%;
-    font-size: 1rem;
+    font-size: 1.1rem; /* Fonte maior */
     font-weight: bold;
-    transition: background-color 0.3s ease;
+    transition: var(--transicao-padrao);
+    box-shadow: 0 4px 15px rgba(34, 74, 162, 0.2); /* Sombra no botão */
+    margin-top: 15px;
 }
 
 .submit-btn:hover {
-    background-color: #e0526e;
+    background-color: var(--maida-rosa); /* Transição para a cor rosa */
+    box-shadow: 0 6px 20px rgba(255, 107, 139, 0.3); /* Sombra mais intensa */
+    transform: translateY(-2px);
+}
+
+#form-success-message {
+    text-align: center;
+    padding: 10px;
+    background-color: #e6ffe6; /* Fundo verde claro */
+    border: 1px solid #00c853; /* Borda verde */
+    color: #008000; /* Texto verde escuro */
+    border-radius: 8px;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+/* Responsividade para o Modal */
+@media (max-width: 600px) {
+    .form-modal-content {
+        width: 95%;
+        padding: 25px;
+    }
+    .fechar-form-btn {
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+    }
+    .form-modal-content h2 {
+        font-size: 1.5em;
+    }
+    .form-modal-content p {
+        font-size: 0.9em;
+    }
+    .solicitacao-btn:hover {
+        width: 120px;
+    }
 }
