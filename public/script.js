@@ -179,6 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const qtdIndisponiveisEl = document.getElementById('qtd-indisponiveis');
         if (qtdIndisponiveisEl) { qtdIndisponiveisEl.innerText = operadoresIndisponiveis.length; }
 
+        console.log("Dados para ordenar PAUSADOS:", operadoresPausados.map(op => ({
+            nome: op.name,
+            inicio_pausa: op.pause.pause_start,
+            timestamp_ms: new Date(op.pause.pause_start).getTime()
+        })));
+
         updateTable('tabela-espera', chamadasEmEsperaDoGrupo.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)), (row, c) => renderRowEspera(row, c, todasFilas), c => `call-${c.uuid}`);
         updateTable('tabela-ativas', chamadasAtivasDoGrupo.sort((a, b) => new Date(a.answered_time) - new Date(b.answered_time)), (row, c) => renderRowAtivas(row, c, todosAgentes, todasFilas), c => `call-${c.uuid}`);
         updateTable('tabela-pausados', operadoresPausados.sort((a, b) => new Date(a.pause.pause_start) - new Date(b.pause.pause_start)), renderRowPausados, a => `agent-${a.id}`);
