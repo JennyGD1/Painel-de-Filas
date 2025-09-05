@@ -27,11 +27,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const pad = (num) => num.toString().padStart(2, '0');
         return `${pad(h)}:${pad(m)}:${pad(s)}`;
     }
+    // Substitua a sua função formatarTempoIndicador por esta:
     function formatarTempoIndicador(segundos) {
-        if (segundos === null || isNaN(segundos) || segundos < 0) 
+        if (segundos === null || isNaN(segundos) || segundos < 0) {
             segundos = 0;
+        }
         
-        return formatarDuracaoHHMMSS(segundos);
+        // Converte o total de segundos para minutos e segundos restantes
+        const m = Math.floor(segundos / 60);
+        const s = Math.round(segundos % 60);
+        
+        const pad = (num) => num.toString().padStart(2, '0');
+        
+        // Retorna sempre no formato MM:SS
+        return `${pad(m)}:${pad(s)}`;
     }
     function formatarTempo(timestamp) {
         if (!timestamp) return '00:00:00';
@@ -317,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ultimasChamadas = {}; 
         } 
     }
-    // NOVA FUNÇÃO 1: Carrega apenas TMA e TME
     async function carregarTmaTme() {
         const grupoSelecionado = document.getElementById("select-grupo").value;
         if (!grupoSelecionado) return;
@@ -326,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(`Falha ao buscar TMA/TME`);
             const indicadores = await response.json();
             if (indicadores) {
+                // Garante que está chamando a função correta: formatarTempoIndicador
                 document.getElementById('indicador-tma').innerText = formatarTempoIndicador(indicadores.tma);
                 document.getElementById('indicador-tme').innerText = formatarTempoIndicador(indicadores.tme);
             }
