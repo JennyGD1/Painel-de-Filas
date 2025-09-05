@@ -1,0 +1,138 @@
+:root {
+    --maida-azul: #224aa2;
+    --maida-rosa: #ff6b8b;
+    --maida-amarelo: #ffd166;
+    --texto-escuro: #333;
+    --texto-cinza: #666;
+    --sombra-padrao: 0 5px 15px rgba(0,0,0,0.1);
+    --transicao-padrao: all 0.3s ease;
+}
+
+body {
+    background-color: #f4f7fc;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 40px 0;
+    box-sizing: border-box;
+}
+
+main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+}
+
+.welcome-container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: var(--sombra-padrao);
+    max-width: 900px;
+    width: 95%;
+    margin: 20px auto;
+    text-align: center;
+}
+
+.logo-welcome {
+    margin-bottom: 20px;
+}
+
+.logo-welcome img {
+    max-width: 120px;
+    height: auto;
+}
+
+.welcome-container h1 {
+    font-size: 2.5rem;
+    color: var(--maida-azul);
+    margin: 0 auto 15px;
+    font-weight: 600;
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--texto-cinza);
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+    font-weight: 400;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 25px;
+    margin-top: 40px;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+    cursor: pointer;
+    transition: var(--transicao-padrao);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid #eef;
+    text-decoration: none;
+    text-align: left;
+}
+
+.feature-icon {
+    font-size: 2rem;
+    color: var(--maida-azul);
+    margin-bottom: 15px;
+}
+
+.feature-card h3 {
+    color: var(--texto-escuro);
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.feature-card p {
+    color: var(--texto-cinza);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.feature-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--maida-rosa);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.feature-card.coming-soon {
+    background: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.feature-card.coming-soon .feature-badge {
+    background-color: var(--texto-cinza);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 20px 0;
+    }
+    .welcome-container {
+        padding: 25px;
+        width: 95%;
+    }
+    .welcome-container h1 {
+        font-size: 1.8rem;
+    }
+}
