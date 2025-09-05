@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderRowAtivas(row, c, agentes, filas) { 
         const agente = agentes[c.agent_id]; 
         const fila = filas[c.queue_id]; 
-        const agora = getCurrentTime(); // ADICIONE ESTA LINHA
+        const agora = getCurrentTime(); 
         const inicio = new Date(c.answered_time).getTime();
         const tempoTotalSegundos = (agora - inicio) / 1000; 
         row.classList.remove('vermelho', 'amarelo'); 
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderRowPausados(row, a) { 
         const pausaInfo = a.pause; 
         row.innerHTML = `<td>${a.name}</td><td>${pausaInfo.reason || 'N/A'}</td><td>${formatarTempo(pausaInfo.pause_start)}</td>`; 
-        const agora = getCurrentTime(); // ADICIONE ESTA LINHA
+        const agora = getCurrentTime();
         const inicio = new Date(pausaInfo.pause_start).getTime();
         const tempoPausadoSegundos = (agora - inicio) / 1000; 
         const motivoDaPausa = pausaInfo.reason; 
@@ -109,13 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function renderRowIndisponiveis(row, a, filas) { const chamada = a.calls[0]; const filaDaChamada = filas[chamada.queue_id]; const nomeFila = filaDaChamada ? filaDaChamada.name : 'Desconhecida'; row.innerHTML = `<td>${a.name}</td><td>${nomeFila}</td><td>${formatarTempo(chamada.answered_time)}</td>`; }
     
-// Substitua sua função renderizarPainel inteira por esta versão corrigida:
     function renderizarPainel() {
         const grupoSelecionadoNome = document.getElementById("select-grupo").value;
         const data = estadoAtualDoPainel;
         if (!data.agents || !grupoSelecionadoNome) return;
-
-        // 1. FILTRAGEM DOS DADOS (como já estava)
         const todosAgentes = data.agents;
         const todasChamadas = data.calls ? Object.values(data.calls) : [];
         const todasFilas = data.queues || {};
@@ -151,30 +148,21 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Conteúdo de 'ultimasChamadas' neste render:", ultimasChamadas);
 
         operadoresLivres.sort((a, b) => {
-            // Última chamada (em ms) — se não existir, será 0
+            
             const timeA = ultimasChamadas[a.id] || 0;
             const timeB = ultimasChamadas[b.id] || 0;
 
             const aSemUltima = timeA === 0;
             const bSemUltima = timeB === 0;
 
-            // 1) Quem não tem última chamada vem primeiro
             if (aSemUltima && !bSemUltima) return -1;
             if (!aSemUltima && bSemUltima) return 1;
 
-            // 2) Se ambos NÃO têm última chamada -> ordena pelo login_start
-            // Queremos os que logaram mais RECENTEMENTE primeiro -> ordem decrescente
-            if (aSemUltima && bSemUltima) {
-                return new Date(b.login_start).getTime() - new Date(a.login_start).getTime();
+            if (!aSemUltima && !bSemUltima) {
+                return timeA - timeB;
             }
 
-            // 3) Se ambos TÊM última chamada -> ordenar por quem está há mais tempo sem atender
-            // (última chamada mais antiga primeiro)
-            const diff = timeB - timeA; 
-            if (diff !== 0) return diff;
-
-            // 4) Empate: fallback por tempo de login (mais antigo primeiro)
-            return new Date(a.login_start).getTime() - new Date(b.login_start).getTime();
+            return 0;
         });
 
 
