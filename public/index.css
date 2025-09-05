@@ -332,8 +332,8 @@ main {
 }
 
 .submit-btn:hover {
-    background-color: var(--maida-azul); /* ALTERADO: Hover agora é azul */
-    box-shadow: 0 6px 20px rgba(34, 74, 162, 0.3); /* Sombra azul no hover */
+    background-color: #e0526e; 
+    box-shadow: 0 6px 20px rgba(255, 107, 139, 0.3);
     transform: translateY(-2px);
 }
 
