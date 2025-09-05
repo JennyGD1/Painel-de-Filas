@@ -5,33 +5,104 @@ document.addEventListener('DOMContentLoaded', () => {
     const LIMITES_DE_PAUSA = { 'Almoço': 3600, 'Pausa nr17 - 10min': 600, 'Pausa nr17 - 20min': 1200, 'Feedback': 300 };
     let estadoAtualDoPainel = {};
     let ultimasChamadas = {}
-    let offsetServidor = 0;
+    let serverTimeOffset = 0;
     
-    function formatarDuracaoHHMMSS(totalSegundos) { if (totalSegundos === null || isNaN(totalSegundos) || totalSegundos < 0) totalSegundos = 0; const h = Math.floor(totalSegundos / 3600); const m = Math.floor((totalSegundos % 3600) / 60); const s = Math.round(totalSegundos % 60); const pad = (num) => num.toString().padStart(2, '0'); return `${pad(h)}:${pad(m)}:${pad(s)}`; }
-    function formatarTempoIndicador(segundos) { if (segundos === null || isNaN(segundos) || segundos < 0) segundos = 0; if (segundos >= 3600) return formatarDuracaoHHMMSS(segundos); const m = Math.floor(segundos / 60); const s = Math.round(segundos % 60); const pad = (num) => num.toString().padStart(2, '0'); return `${pad(m)}:${pad(s)}`; }
+    function calcularOffsetServidor(serverTime) {
+        const serverTimeMs = new Date(serverTime).getTime();
+        const clientTimeMs = Date.now();
+        serverTimeOffset = serverTimeMs - clientTimeMs;
+    }
+
+    function getCurrentTime() {
+        return Date.now() + serverTimeOffset;
+    }
+    function formatarDuracaoHHMMSS(totalSegundos) {
+        if (totalSegundos === null || isNaN(totalSegundos) || totalSegundos < 0) 
+            totalSegundos = 0;
+        
+        const h = Math.floor(totalSegundos / 3600);
+        const m = Math.floor((totalSegundos % 3600) / 60);
+        const s = Math.round(totalSegundos % 60);
+        
+        const pad = (num) => num.toString().padStart(2, '0');
+        return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    function formatarTempoIndicador(segundos) {
+        if (segundos === null || isNaN(segundos) || segundos < 0) 
+            segundos = 0;
+        
+        return formatarDuracaoHHMMSS(segundos);
+    }
     function formatarTempo(timestamp) {
         if (!timestamp) return '00:00:00';
 
-        const agora = Date.now() + offsetServidor;
         const inicio = new Date(timestamp).getTime();
+        const agora = getCurrentTime();
         
-        let segundos = Math.round((agora - inicio) / 1000);
-        if (segundos < 0) {
-            segundos = 0;
-        }
-
+        let segundos = Math.max(0, Math.round((agora - inicio) / 1000));
         return formatarDuracaoHHMMSS(segundos);
-}
+    }
+
     const updateTable = (tbodyId, items, renderRowFunc, getItemId) => { const tbody = document.getElementById(tbodyId); if (!tbody) return; const itemIds = new Set(items.map(getItemId)); Array.from(tbody.children).forEach(row => { if (!itemIds.has(row.id)) tbody.removeChild(row); }); items.forEach(item => { const rowId = getItemId(item); let row = document.getElementById(rowId); if (!row) { row = document.createElement('tr'); row.id = rowId; row.classList.add('row-enter'); tbody.appendChild(row); } renderRowFunc(row, item); }); };
-    function renderRowEspera(row, c, filas) { const tempoTotalSegundos = (Date.now() - new Date(c.start_time).getTime()) / 1000; row.classList.remove('vermelho', 'amarelo'); if (tempoTotalSegundos >= 30) { row.classList.add('vermelho'); } else if (tempoTotalSegundos >= 25) { row.classList.add('amarelo'); } const fila = filas[c.queue_id]; const nomeFila = fila ? fila.name : 'N/A'; row.innerHTML = `<td>${c.caller_number || 'Desconhecido'}</td><td>${nomeFila}</td><td>${formatarTempo(c.start_time)}</td>`; }
-    function renderRowAtivas(row, c, agentes, filas) { const agente = agentes[c.agent_id]; const fila = filas[c.queue_id]; const tempoTotalSegundos = (Date.now() - new Date(c.answered_time).getTime()) / 1000; row.classList.remove('vermelho', 'amarelo'); if (tempoTotalSegundos >= 300) { row.classList.add('vermelho'); } else if (tempoTotalSegundos >= 240) { row.classList.add('amarelo'); } row.innerHTML = `<td><span class="info-operador">${agente ? agente.name : 'Desconhecido'}</span><span class="info-detalhe">${c.caller_number || 'N/A'}</span></td><td>${fila ? fila.name : 'N/A'}</td><td>${formatarTempo(c.answered_time)}</td>`; }
-    function renderRowPausados(row, a) { const pausaInfo = a.pause; row.innerHTML = `<td>${a.name}</td><td>${pausaInfo.reason || 'N/A'}</td><td>${formatarTempo(pausaInfo.pause_start)}</td>`; const tempoPausadoSegundos = (Date.now() - new Date(pausaInfo.pause_start).getTime()) / 1000; const motivoDaPausa = pausaInfo.reason; const limiteDaPausa = LIMITES_DE_PAUSA[motivoDaPausa]; if (limiteDaPausa && tempoPausadoSegundos > limiteDaPausa) { row.classList.add('vermelho'); } else { row.classList.remove('vermelho'); } }
-    function renderRowLivres(row, a) { const timestampUltimaChamada = ultimasChamadas[a.id]; let ultimaChamadaDisplay = '--:--:--'; let disponivelDisplay = '--:--:--'; if (timestampUltimaChamada) { const segundosDesdeUltima = Math.round((Date.now() - timestampUltimaChamada) / 1000); const duracaoFormatada = formatarDuracaoHHMMSS(segundosDesdeUltima); ultimaChamadaDisplay = duracaoFormatada; } row.innerHTML = `<td>${a.name}</td><td>${a.position || 'N/A'}</td><td>${formatarTempo(a.login_start)}</td><td>${ultimaChamadaDisplay}</td>`; }
+    function renderRowEspera(row, c, filas) { 
+        const agora = getCurrentTime(); // ADICIONE ESTA LINHA
+        const inicio = new Date(c.start_time).getTime(); 
+        const tempoTotalSegundos = (agora - inicio) / 1000; 
+        row.classList.remove('vermelho', 'amarelo'); 
+        if (tempoTotalSegundos >= 30) { 
+            row.classList.add('vermelho'); 
+        } else if (tempoTotalSegundos >= 25) { 
+            row.classList.add('amarelo'); 
+        } 
+        const fila = filas[c.queue_id]; 
+        const nomeFila = fila ? fila.name : 'N/A'; 
+        row.innerHTML = `<td>${c.caller_number || 'Desconhecido'}</td><td>${nomeFila}</td><td>${formatarTempo(c.start_time)}</td>`; 
+    }
+    function renderRowAtivas(row, c, agentes, filas) { 
+        const agente = agentes[c.agent_id]; 
+        const fila = filas[c.queue_id]; 
+        const agora = getCurrentTime(); // ADICIONE ESTA LINHA
+        const inicio = new Date(c.answered_time).getTime();
+        const tempoTotalSegundos = (agora - inicio) / 1000; 
+        row.classList.remove('vermelho', 'amarelo'); 
+        if (tempoTotalSegundos >= 300) { 
+            row.classList.add('vermelho'); 
+        } else if (tempoTotalSegundos >= 240) { 
+            row.classList.add('amarelo'); 
+        } 
+        row.innerHTML = `<td><span class="info-operador">${agente ? agente.name : 'Desconhecido'}</span><span class="info-detalhe">${c.caller_number || 'N/A'}</span></td><td>${fila ? fila.name : 'N/A'}</td><td>${formatarTempo(c.answered_time)}</td>`; 
+    }
+    function renderRowPausados(row, a) { 
+        const pausaInfo = a.pause; 
+        row.innerHTML = `<td>${a.name}</td><td>${pausaInfo.reason || 'N/A'}</td><td>${formatarTempo(pausaInfo.pause_start)}</td>`; 
+        const agora = getCurrentTime(); // ADICIONE ESTA LINHA
+        const inicio = new Date(pausaInfo.pause_start).getTime();
+        const tempoPausadoSegundos = (agora - inicio) / 1000; 
+        const motivoDaPausa = pausaInfo.reason; 
+        const limiteDaPausa = LIMITES_DE_PAUSA[motivoDaPausa]; 
+        if (limiteDaPausa && tempoPausadoSegundos > limiteDaPausa) { 
+            row.classList.add('vermelho'); 
+        } else { 
+            row.classList.remove('vermelho'); 
+        } 
+    }
+    function renderRowLivres(row, a) { 
+        const timestampUltimaChamada = ultimasChamadas[a.id]; 
+        let ultimaChamadaDisplay = '--:--:--'; 
+        let disponivelDisplay = '--:--:--'; 
+        if (timestampUltimaChamada) { 
+            const agora = getCurrentTime(); // ADICIONE ESTA LINHA
+            const segundosDesdeUltima = Math.round((agora - timestampUltimaChamada) / 1000); 
+            const duracaoFormatada = formatarDuracaoHHMMSS(segundosDesdeUltima); 
+            ultimaChamadaDisplay = duracaoFormatada; 
+        } 
+        row.innerHTML = `<td>${a.name}</td><td>${a.position || 'N/A'}</td><td>${formatarTempo(a.login_start)}</td><td>${ultimaChamadaDisplay}</td>`; 
+    }
     function renderRowIndisponiveis(row, a, filas) { const chamada = a.calls[0]; const filaDaChamada = filas[chamada.queue_id]; const nomeFila = filaDaChamada ? filaDaChamada.name : 'Desconhecida'; row.innerHTML = `<td>${a.name}</td><td>${nomeFila}</td><td>${formatarTempo(chamada.answered_time)}</td>`; }
     
     function renderizarPainel() {
-
         
+        const agora = getCurrentTime();
         const grupoSelecionadoNome = document.getElementById("select-grupo").value;
         const data = estadoAtualDoPainel;
         if (!data.agents || !grupoSelecionadoNome) return;
@@ -213,9 +284,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // NOVO: Calcula a diferença entre a hora do servidor e a hora local
             if (estadoAtualDoPainel.server_time) {
-                const serverTime = new Date(estadoAtualDoPainel.server_time).getTime();
-                const clientTime = Date.now();
-                offsetServidor = serverTime - clientTime;
+                calcularOffsetServidor(estadoAtualDoPainel.server_time);
+            } else {
+                
+                console.warn('Server time não disponível, usando tempo local');
+                serverTimeOffset = 0;
             }
 
         } catch (error) {
@@ -224,25 +297,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
         
-    async function buscarUltimasChamadas() { const grupoSelecionado = document.getElementById("select-grupo").value; if (!grupoSelecionado) return; try { const response = await fetch(`/api/ultimas-chamadas?grupo=${encodeURIComponent(grupoSelecionado)}`); if (!response.ok) { ultimasChamadas = {}; return; } ultimasChamadas = await response.json(); } catch (error) { console.error('Erro ao buscar últimas chamadas:', error); ultimasChamadas = {}; } }
-    
     // NOVA FUNÇÃO 1: Carrega apenas TMA e TME
-    async function carregarTmaTme() {
-        const grupoSelecionado = document.getElementById("select-grupo").value;
-        if (!grupoSelecionado) return;
-        try {
-            const response = await fetch(`/api/indicadores/tma-tme?grupo=${encodeURIComponent(grupoSelecionado)}`);
-            if (!response.ok) throw new Error(`Falha ao buscar TMA/TME`);
-            const indicadores = await response.json();
-            if (indicadores) {
-                document.getElementById('indicador-tma').innerText = formatarTempoIndicador(indicadores.tma);
-                document.getElementById('indicador-tme').innerText = formatarTempoIndicador(indicadores.tme);
-            }
-        } catch (error) {
-            console.error("Erro ao carregar TMA/TME:", error);
-            document.getElementById('indicador-tma').innerText = 'Erro';
-            document.getElementById('indicador-tme').innerText = 'Erro';
-        }
+    async function buscarUltimasChamadas() { 
+        const grupoSelecionado = document.getElementById("select-grupo").value; 
+        if (!grupoSelecionado) return; 
+        try { 
+            const response = await fetch(`/api/ultimas-chamadas?grupo=${encodeURIComponent(grupoSelecionado)}`); 
+            if (!response.ok) { ultimasChamadas = {}; return; } 
+            ultimasChamadas = await response.json(); 
+            
+            // CONVERTE PARA MILISEGUNDOS SE NECESSÁRIO
+            Object.keys(ultimasChamadas).forEach(agentId => {
+                if (ultimasChamadas[agentId] < 1000000000000) { // Se for segundos em vez de milissegundos
+                    ultimasChamadas[agentId] = ultimasChamadas[agentId] * 1000;
+                }
+            });
+        } catch (error) { 
+            console.error('Erro ao buscar últimas chamadas:', error); 
+            ultimasChamadas = {}; 
+        } 
     }
 
     // NOVA FUNÇÃO 2: Carrega apenas o % de Abandono (Dia)
@@ -307,18 +380,38 @@ document.addEventListener('DOMContentLoaded', () => {
         reposicionarCardsDinamicamente();
     }
 
-    async function iniciarPainel() {
+// Substitua os intervals por este sistema mais eficiente
+    function iniciarPainel() {
         popularGrupos();
-        await sequenciaDeCargaCompleta();
-    
-        setInterval(buscarDadosGerais, 3000); 
-        setInterval(renderizarPainel, 1000);
-        setInterval(buscarUltimasChamadas, 7000);
+        sequenciaDeCargaCompleta();
+
+        // Sistema de atualização otimizado
+        setInterval(buscarDadosGerais, 3000);
         
-        // NOVOS INTERVALOS DE ATUALIZAÇÃO
-        setInterval(carregarTmaTme, 30000);             // 1 minuto
-        setInterval(carregarAbandonoDia, 60000);      // 1 minuto
-        setInterval(carregarVariacaoAbandono, 300000);  // 5 minutos
+        // Atualização contínua dos contadores (60 FPS suave)
+        let lastUpdate = 0;
+        function animarContadores(timestamp) {
+            if (timestamp - lastUpdate > 1000) {
+                renderizarPainel();
+                lastUpdate = timestamp;
+            }
+            requestAnimationFrame(animarContadores);
+        }
+        requestAnimationFrame(animarContadores);
+        
+        // Outras atualizações menos frequentes
+        setInterval(() => {
+            buscarUltimasChamadas();
+            carregarTmaTme();
+        }, 10000);
+        
+        setInterval(() => {
+            carregarAbandonoDia();
+        }, 30000);
+        
+        setInterval(() => {
+            carregarVariacaoAbandono();
+        }, 300000);
     }
 
     // ===== EXECUÇÃO INICIAL E EVENT LISTENERS =====
