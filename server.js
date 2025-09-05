@@ -98,12 +98,33 @@ app.get('/api/indicadores/tma-tme', async (req, res) => {
     if (tmaTmeCache.has(cacheKey)) {
         return res.json(tmaTmeCache.get(cacheKey));
     }
+    // Substitua o bloco try...catch existente por este:
     try {
         const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
-        const agora = new Date();
-        const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
-        const fimDoDiaAtual = agora.toISOString();
-        const params = { start_date: inicioDoDia, end_date: fimDoDiaAtual, entity: 'queue_groups', queue_group_ids: grupo.groupId, group_by: 'day' };
+
+        // --- LÓGICA DE DATA FORÇANDO O FUSO HORÁRIO UTC-3 ---
+        // Pega a data e hora atual em UTC
+        const agoraUTC = new Date();
+        
+        // Pega o ano, mês e dia com base na data de Fortaleza (subtraindo 3 horas do UTC)
+        const agoraFortaleza = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
+        const year = agoraFortaleza.getUTCFullYear();
+        const month = agoraFortaleza.getUTCMonth();
+        const day = agoraFortaleza.getUTCDate();
+
+        // Define o início do dia como meia-noite de Fortaleza, mas no formato UTC (03:00 UTC)
+        // A API da Evolux sempre espera o formato UTC (com 'Z' no final)
+        const inicioDoDiaUTC = new Date(Date.UTC(year, month, day, 3, 0, 0));
+        
+        const params = {
+            start_date: inicioDoDiaUTC.toISOString(),
+            end_date: agoraUTC.toISOString(),
+            entity: 'queue_groups',
+            queue_group_ids: grupo.groupId,
+            group_by: 'day'
+        };
+        // --- FIM DA LÓGICA DE DATA ---
+
         const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params });
         const totais = response.data.data.find(item => item.label === 'Total');
         const resultado = {
@@ -112,6 +133,7 @@ app.get('/api/indicadores/tma-tme', async (req, res) => {
         };
         tmaTmeCache.set(cacheKey, resultado);
         res.json(resultado);
+
     } catch (error) {
         console.error(`Erro na API de TMA/TME:`, error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Falha ao buscar TMA/TME' });
