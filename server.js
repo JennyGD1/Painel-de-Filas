@@ -13,9 +13,9 @@ const EVOLUX_REPORTS_URL = 'https://maida.evolux.io/api/v1/report/answered_aband
 const EVOLUX_CALLS_REPORT_URL = 'https://maida.evolux.io/api/v1/report/calls_history';
 
 // CACHES SEPARADOS
-const realtimeCache = new NodeCache({ stdTTL: 3, checkperiod: 5 });
+const realtimeCache = new NodeCache({ stdTTL: 5, checkperiod: 7 });
 const lastCallsCache = new NodeCache({ stdTTL: 10, checkperiod: 15 });
-const tmaTmeCache = new NodeCache({ stdTTL: 30, checkperiod: 40 });            // Cache de 30 segundos
+const tmaTmeCache = new NodeCache({ stdTTL: 40, checkperiod: 50 });            // Cache de 30 segundos
 const abandonoDiaCache = new NodeCache({ stdTTL: 60, checkperiod: 70 });   // Cache de 1 minuto
 const variationCache = new NodeCache({ stdTTL: 300, checkperiod: 310 });       // Cache de 5 MINUTOS
 const reportsCache = new NodeCache({ stdTTL: 600, checkperiod: 610 });
