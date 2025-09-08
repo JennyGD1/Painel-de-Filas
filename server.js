@@ -18,6 +18,7 @@ const lastCallsCache = new NodeCache({ stdTTL: 10, checkperiod: 15 });
 const tmaTmeCache = new NodeCache({ stdTTL: 30, checkperiod: 40 });            // Cache de 30 segundos
 const abandonoDiaCache = new NodeCache({ stdTTL: 60, checkperiod: 70 });   // Cache de 1 minuto
 const variationCache = new NodeCache({ stdTTL: 300, checkperiod: 310 });       // Cache de 5 MINUTOS
+const reportsCache = new NodeCache({ stdTTL: 600, checkperiod: 610 });
 
 const gruposDeFila = [
     { name: "ISSEC", groupId: 52, queueIds: [514, 515] },
