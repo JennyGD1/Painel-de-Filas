@@ -39,24 +39,48 @@ const gruposDeFila = [
 app.use(cors());
 app.use(express.static('public'));
 
-app.get('/api/reports/sla', async (req, res) => {
-    // Pega os parâmetros de data que virão do frontend
-    const { startDate, endDate } = req.query;
+// 1. Rota para carregar os filtros no frontend (adicione esta nova rota)
+//    Pega a lista de grupos do seu array 'gruposDeFila' existente.
+// 1. Rota para carregar os filtros no frontend (adicione esta nova rota)
+//    Pega a lista de grupos do seu array 'gruposDeFila' existente.
+app.get('/api/filters-options', (req, res) => {
+    try {
+        const groups = gruposDeFila.map(g => ({ id: g.groupId, name: g.name }));
+        
+        // Extrai todas as filas únicas (simulação, idealmente viria da API)
+        const allQueuesMap = new Map();
+        gruposDeFila.forEach(grupo => {
+            grupo.queueIds.forEach(id => {
+                // Em um cenário real, precisaríamos buscar o nome da fila correspondente ao ID.
+                // Por enquanto, vamos criar nomes fictícios baseados no ID.
+                if (!allQueuesMap.has(id)) {
+                    allQueuesMap.set(id, { id: id, name: `Fila ID ${id}` }); 
+                }
+            });
+        });
+        const queues = Array.from(allQueuesMap.values());
 
-    if (!startDate || !endDate) {
-        return res.status(400).json({ error: 'Data inicial e data final são obrigatórias.' });
+        res.json({ groups, queues });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao carregar opções de filtro' });
+    }
+});
+
+
+// 2. Modifique a rota /api/reports/sla existente para aceitar os novos filtros
+app.get('/api/reports/sla', async (req, res) => {
+    const { startDate, endDate, filterType, filterValue } = req.query;
+
+    if (!startDate || !endDate || !filterType || !filterValue) {
+        return res.status(400).json({ error: 'Todos os filtros são obrigatórios.' });
     }
     
-    // Cria uma chave de cache única para esta combinação de datas
-    const cacheKey = `report_sla_${startDate}_${endDate}`;
+    const cacheKey = `report_sla_${filterType}_${filterValue}_${startDate}_${endDate}`;
     if (reportsCache.has(cacheKey)) {
         return res.json(reportsCache.get(cacheKey));
     }
 
-    // Formata as datas para o padrão da API (ex: 2025-09-08)
-    // A API de relatórios parece aceitar datas simples, mas vamos garantir o fuso UTC-3.
     const isoStartDate = `${startDate}T03:00:00.000Z`;
-    // Para a data final, pegamos o final do dia (23:59:59), que em UTC-3 é 02:59:59 do dia seguinte.
     const tempEndDate = new Date(endDate);
     tempEndDate.setDate(tempEndDate.getDate() + 1);
     const isoEndDate = `${tempEndDate.toISOString().split('T')[0]}T02:59:59.999Z`;
@@ -64,32 +88,43 @@ app.get('/api/reports/sla', async (req, res) => {
     const reportParams = {
         start_date: isoStartDate,
         end_date: isoEndDate,
-        entity: 'queue_groups',
-        queue_group_ids: 48, // Vamos testar com um ID de grupo específico em vez de 'all'
         group_by: 'day',
         start_hour: '07',
         end_hour: '19'
     };
 
+    // Lógica dinâmica de filtro
+    if (filterType === 'group') {
+        reportParams.entity = 'queue_groups';
+        reportParams.queue_group_ids = filterValue;
+    } else { // filterType === 'queue'
+        reportParams.entity = 'queues';
+        reportParams.queues_ids = filterValue;
+        reportParams.queue_or_group = 'queues'; // Necessário quando entity é queues
+    }
+
     try {
         const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
         const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params: reportParams });
         
-        // Salva no cache antes de retornar
-        reportsCache.set(cacheKey, response.data);
-        res.json(response.data);
+        // Anexa as informações de filtro e metas aos dados (simulação de metas)
+        const responseData = response.data;
+        responseData.requestInfo = { filterType, filterValue }; // Guarda o que foi solicitado
+
+        reportsCache.set(cacheKey, responseData);
+        res.json(responseData);
 
     } catch (error) {
         if (error.response) {
-            // Log detalhado do que a API da Evolux respondeu
             console.error('Erro detalhado da API de Relatório SLA:', JSON.stringify(error.response.data, null, 2));
+            res.status(error.response.status).json(error.response.data);
         } else {
-            // Erro de rede ou outro problema
             console.error('Erro ao conectar com a API de Relatório SLA:', error.message);
+            res.status(500).json({ error: 'Falha ao conectar com o servidor' });
         }
-        res.status(500).json({ error: 'Falha ao buscar relatório de SLA' });
     }
 });
+
 app.get('/api/filas', async (req, res) => {
     const cacheKey = 'dados_em_tempo_real';
     if (realtimeCache.has(cacheKey)) {
