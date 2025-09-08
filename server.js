@@ -64,9 +64,9 @@ app.get('/api/reports/sla', async (req, res) => {
     const reportParams = {
         start_date: isoStartDate,
         end_date: isoEndDate,
-        entity: 'queue_groups', // Pode mudar para 'queues' se quiser filtrar por fila individual
-        queue_group_ids: 'all', // Pega de todos os grupos por enquanto
-        group_by: 'day', // Agrupa os dados por dia
+        entity: 'queue_groups',
+        queue_group_ids: 48, // Vamos testar com um ID de grupo específico em vez de 'all'
+        group_by: 'day',
         start_hour: '07',
         end_hour: '19'
     };
@@ -80,7 +80,13 @@ app.get('/api/reports/sla', async (req, res) => {
         res.json(response.data);
 
     } catch (error) {
-        console.error(`Erro na API de Relatório SLA:`, error.response ? error.response.data : error.message);
+        if (error.response) {
+            // Log detalhado do que a API da Evolux respondeu
+            console.error('Erro detalhado da API de Relatório SLA:', JSON.stringify(error.response.data, null, 2));
+        } else {
+            // Erro de rede ou outro problema
+            console.error('Erro ao conectar com a API de Relatório SLA:', error.message);
+        }
         res.status(500).json({ error: 'Falha ao buscar relatório de SLA' });
     }
 });
