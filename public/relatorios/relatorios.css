@@ -170,3 +170,19 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     margin-bottom: 20px; /* Espaço entre os gráficos */
 }
+/* Estilos para indicadores de meta (Vermelho/Verde) */
+.kpi-card.kpi-good .kpi-value {
+    color: #28a745; /* Verde para meta atingida */
+}
+
+.kpi-card.kpi-bad .kpi-value {
+    color: #dc3545; /* Vermelho para meta não atingida */
+}
+
+.kpi-card.kpi-good {
+    border-left: 5px solid #28a745;
+}
+
+.kpi-card.kpi-bad {
+    border-left: 5px solid #dc3545;
+}

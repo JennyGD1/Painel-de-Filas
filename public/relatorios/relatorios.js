@@ -152,52 +152,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function updateKpiCards(summary, goals) {
-        // Formatar e exibir TMA e TME
-        document.getElementById('kpi-tma').textContent = formatTime(summary.att);
-        document.getElementById('kpi-tme').textContent = formatTime(summary.asa);
-        if(goals.tmaMeta) document.getElementById('kpi-meta-tma').textContent = `Meta: ${formatTime(goals.tmaMeta)}`;
-        if(goals.tmeMeta) document.getElementById('kpi-meta-tme').textContent = `Meta: ${formatTime(goals.tmeMeta)}`;
+        // --- Elementos dos Cards ---
+        const tmaCard = document.getElementById('kpi-tma').closest('.kpi-card');
+        const tmeCard = document.getElementById('kpi-tme').closest('.kpi-card');
+        const slaCard = document.getElementById('kpi-sla').closest('.kpi-card');
+        const abandonmentCard = document.getElementById('kpi-abandonment').closest('.kpi-card');
 
-        // Formatar e exibir SLA e Abandono
-        document.getElementById('kpi-sla').textContent = `${summary.in_sla_wait_percent.toFixed(2)}%`;
-        document.getElementById('kpi-abandonment').textContent = `${summary.abandoned_percent.toFixed(2)}%`;
-        if(goals.slaMeta) document.getElementById('kpi-meta-sla').textContent = `Meta: ${goals.slaMeta.toFixed(2)}%`;
-        if(goals.abandonoPercentMeta) document.getElementById('kpi-meta-abandonment').textContent = `Meta: < ${goals.abandonoPercentMeta.toFixed(2)}%`;
-    }
-
-    // --- Funções de Renderização de Gráficos ---
-    function renderVolumeChart(labels, received, answered, abandoned) {
-        const ctx = document.getElementById('volumeChart').getContext('2d');
-        if (volumeChartInstance) volumeChartInstance.destroy();
-
-        volumeChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Recebidas',
-                        data: received,
-                        backgroundColor: '#a9c_f_e', // Cinza azulado
-                    },
-                    {
-                        label: 'Atendidas',
-                        data: answered,
-                        backgroundColor: '#224aa2', // Azul Maida
-                    },
-                    {
-                        label: 'Abandonadas',
-                        data: abandoned,
-                        backgroundColor: '#ff6b8b', // Rosa Maida
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: { title: { display: true, text: 'Volume de Chamadas (Recebidas x Atendidas x Abandonadas)' } },
-                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
-            }
+        // Limpa classes anteriores
+        [tmaCard, tmeCard, slaCard, abandonmentCard].forEach(card => {
+            card.classList.remove('kpi-good', 'kpi-bad');
         });
+
+        // --- Processamento e Exibição de KPIs ---
+        const tmaValue = summary.att;
+        const tmeValue = summary.asa;
+        const slaValue = summary.in_sla_wait_percent;
+        const abandonmentValue = summary.abandoned_percent;
+
+        // 1. TMA (Menor é melhor)
+        document.getElementById('kpi-tma').textContent = formatTime(tmaValue);
+        if (goals.tmaMeta) {
+            document.getElementById('kpi-meta-tma').textContent = `Meta: ${formatTime(goals.tmaMeta)}`;
+            if (tmaValue <= goals.tmaMeta) {
+                tmaCard.classList.add('kpi-good');
+            } else {
+                tmaCard.classList.add('kpi-bad');
+            }
+        }
+
+        // 2. TME (Menor é melhor)
+        document.getElementById('kpi-tme').textContent = formatTime(tmeValue);
+        if (goals.tmeMeta) {
+            document.getElementById('kpi-meta-tme').textContent = `Meta: ${formatTime(goals.tmeMeta)}`;
+            if (tmeValue <= goals.tmeMeta) {
+                tmeCard.classList.add('kpi-good');
+            } else {
+                tmeCard.classList.add('kpi-bad');
+            }
+        }
+
+        // 3. Nível de Serviço (SLA) (Maior é melhor)
+        document.getElementById('kpi-sla').textContent = `${slaValue.toFixed(2)}%`;
+        if (goals.slaMeta) {
+            document.getElementById('kpi-meta-sla').textContent = `Meta: ${goals.slaMeta.toFixed(2)}%`;
+            if (slaValue >= goals.slaMeta) {
+                slaCard.classList.add('kpi-good');
+            } else {
+                slaCard.classList.add('kpi-bad');
+            }
+        }
+        
+        // 4. Abandono (Menor é melhor)
+        document.getElementById('kpi-abandonment').textContent = `${abandonmentValue.toFixed(2)}%`;
+        if (goals.abandonoPercentMeta) {
+            document.getElementById('kpi-meta-abandonment').textContent = `Meta: < ${goals.abandonoPercentMeta.toFixed(2)}%`;
+            if (abandonmentValue <= goals.abandonoPercentMeta) {
+                abandonmentCard.classList.add('kpi-good');
+            } else {
+                abandonmentCard.classList.add('kpi-bad');
+            }
+        }
     }
 
     function renderSlaChart(labels, slaPercent, goals) {
@@ -242,4 +256,115 @@ document.addEventListener('DOMContentLoaded', () => {
         const seconds = Math.floor(totalSeconds % 60);
         return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
+    function renderVolumeChart(labels, received, answered, abandoned) {
+        const ctx = document.getElementById('volumeChart').getContext('2d');
+        if (volumeChartInstance) volumeChartInstance.destroy();
+
+        volumeChartInstance = new Chart(ctx, {
+            type: 'bar', // Mantém o tipo barra
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Recebidas',
+                        data: received,
+                        backgroundColor: '#a9c_f_e', 
+                    },
+                    {
+                        label: 'Atendidas',
+                        data: answered,
+                        backgroundColor: '#224aa2', 
+                    },
+                    {
+                        label: 'Abandonadas',
+                        data: abandoned,
+                        backgroundColor: '#ff6b8b', 
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { title: { display: true, text: 'Volume de Chamadas (Recebidas x Atendidas x Abandonadas)' } },
+                scales: { 
+                    x: { stacked: false }, // ALTERADO DE true para false (ou removido)
+                    y: { stacked: false, beginAtZero: true } // ALTERADO DE true para false (ou removido)
+                }
+            }
+        });
+    }
+    function renderTimeChart(labels, tmaData, tmeData, goals) {
+        const ctx = document.getElementById('timeChart').getContext('2d');
+        if (timeChartInstance) timeChartInstance.destroy();
+
+        const datasets = [
+            {
+                label: 'TMA Diário',
+                data: tmaData,
+                borderColor: '#007bff', // Azul diferente para diferenciar
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                fill: false,
+                tension: 0.1
+            },
+            {
+                label: 'TME Diário',
+                data: tmeData,
+                borderColor: '#ffc107', // Amarelo/Laranja
+                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                fill: false,
+                tension: 0.1
+            }
+        ];
+
+        // Adiciona linhas de meta se existirem
+        if (goals.tmaMeta) {
+            datasets.push({
+                label: `Meta TMA (${formatTime(goals.tmaMeta)})`,
+                data: Array(labels.length).fill(goals.tmaMeta),
+                borderColor: '#007bff',
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 0
+            });
+        }
+        if (goals.tmeMeta) {
+            datasets.push({
+                label: `Meta TME (${formatTime(goals.tmeMeta)})`,
+                data: Array(labels.length).fill(goals.tmeMeta),
+                borderColor: '#ffc107',
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 0
+            });
+        }
+
+        timeChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Evolução Diária - TMA e TME' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                // Formata o tooltip para MM:SS
+                                return `${context.dataset.label}: ${formatTime(context.raw)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                // Formata o eixo Y para MM:SS
+                                return formatTime(value);
+                            }
+                        }
+                    }
+                }
+            }
+    });
+}
 });
