@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elementos do DOM ---
     const filterTypeSelect = document.getElementById('filter-type');
     const groupSelectContainer = document.getElementById('group-selector-container');
     const queueSelectContainer = document.getElementById('queue-selector-container');
@@ -10,39 +9,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generate-report-btn');
     const errorMessageElement = document.getElementById('error-message');
 
-    // --- Instâncias dos Gráficos ---
     let volumeChartInstance = null;
     let slaChartInstance = null;
 
-    // --- Definição de Metas (Exemplo ISSEC) ---
     const metasCliente = {
-        // ID do Grupo ISSEC (conforme seu array gruposDeFila) é 52
         "52": {
             atendidasPercentMeta: 97.5,
             abandonoPercentMeta: 2.5,
-            tmeMeta: 120, // 02:00 em segundos
-            tmaMeta: 480, // 08:00 em segundos
-            slaMeta: 80, // SLA de Espera (00:30)
-            slaTimeThreshold: 30 // Limite de tempo em segundos para o SLA
+            tmeMeta: 120, 
+            tmaMeta: 480, 
+            slaMeta: 80, 
+            slaTimeThreshold: 30 
         }
-        // Adicione outras metas aqui...
-        // "48": { ... metas SC Saúde ... } 
     };
 
-    // --- INICIALIZAÇÃO DA PÁGINA ---
     loadFilterOptions();
     setupEventListeners();
 
-    // --- Carrega opções dos seletores de Grupo e Fila ---
     async function loadFilterOptions() {
         try {
-            // No futuro, podemos criar uma rota /api/queues para buscar filas reais da Evolux
-            // Por enquanto, usamos os dados de gruposDeFila do backend.
             const response = await fetch('/api/filters-options'); 
             const data = await response.json();
 
             populateSelect(groupSelect, data.groups);
-            populateSelect(queueSelect, data.queues); // Fila individual (simplificado)
+            populateSelect(queueSelect, data.queues);
 
         } catch (error) {
             console.error('Erro ao carregar filtros:', error);
@@ -59,9 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Configuração dos Event Listeners ---
     function setupEventListeners() {
-        // Alterna a visibilidade dos seletores de grupo/fila
         filterTypeSelect.addEventListener('change', () => {
             if (filterTypeSelect.value === 'group') {
                 groupSelectContainer.style.display = 'block';
@@ -72,13 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Listener do botão principal de gerar relatório
         generateBtn.addEventListener('click', handleGenerateReport);
     }
 
-    // --- Validação e Geração do Relatório ---
     async function handleGenerateReport() {
-        errorMessageElement.textContent = ''; // Limpa erros antigos
+        errorMessageElement.textContent = '';
 
         if (!validateInputs()) return;
 
@@ -126,50 +112,51 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    // --- Processamento e Renderização dos Dados ---
     function processAndRenderData(result) {
         const dailyData = result.data.filter(entry => entry.label !== 'Total');
         const summaryData = result.data.find(entry => entry.label === 'Total');
-        
-        // Determina a meta aplicável baseada no filtro selecionado
         const currentGoals = metasCliente[result.requestInfo.filterValue] || {};
 
-        // 1. Processar dados para os gráficos de evolução diária
+   
         const labels = dailyData.map(entry => entry.label);
-        const receivedCalls = dailyData.map(entry => entry.calls);
+        const slaPercent = dailyData.map(entry => entry.in_sla_wait_percent);
+        
+
         const answeredCalls = dailyData.map(entry => entry.answered);
-        const abandonedCalls = dailyData.map(entry => entry.abandoned);
-        const slaPercent = dailyData.map(entry => entry.in_sla_wait_percent); // Métrica de SLA da API
+        const totalLostCalls = dailyData.map(entry => {
+            const losses = (entry.abandoned || 0) + (entry.lost || 0) + (entry.dropout || 0);
+            return -losses; 
+        });
 
-        // 2. Renderizar gráficos
-        renderVolumeChart(labels, receivedCalls, answeredCalls, abandonedCalls);
+        const tmaDataPoints = dailyData.map(entry => entry.att);
+        const tmeDataPoints = dailyData.map(entry => entry.asa);
+
+        renderVolumeChart(labels, answeredCalls, totalLostCalls);
         renderSlaChart(labels, slaPercent, currentGoals);
+        renderTimeChart(labels, tmaDataPoints, tmeDataPoints, currentGoals);
 
-        // 3. Atualizar KPIs com dados totais do período
         if (summaryData) {
             updateKpiCards(summaryData, currentGoals);
         }
     }
     
     function updateKpiCards(summary, goals) {
-        // --- Elementos dos Cards ---
+    
         const tmaCard = document.getElementById('kpi-tma').closest('.kpi-card');
         const tmeCard = document.getElementById('kpi-tme').closest('.kpi-card');
         const slaCard = document.getElementById('kpi-sla').closest('.kpi-card');
         const abandonmentCard = document.getElementById('kpi-abandonment').closest('.kpi-card');
 
-        // Limpa classes anteriores
+  
         [tmaCard, tmeCard, slaCard, abandonmentCard].forEach(card => {
             card.classList.remove('kpi-good', 'kpi-bad');
         });
 
-        // --- Processamento e Exibição de KPIs ---
         const tmaValue = summary.att;
         const tmeValue = summary.asa;
         const slaValue = summary.in_sla_wait_percent;
         const abandonmentValue = summary.abandoned_percent;
 
-        // 1. TMA (Menor é melhor)
         document.getElementById('kpi-tma').textContent = formatTime(tmaValue);
         if (goals.tmaMeta) {
             document.getElementById('kpi-meta-tma').textContent = `Meta: ${formatTime(goals.tmaMeta)}`;
@@ -180,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 2. TME (Menor é melhor)
         document.getElementById('kpi-tme').textContent = formatTime(tmeValue);
         if (goals.tmeMeta) {
             document.getElementById('kpi-meta-tme').textContent = `Meta: ${formatTime(goals.tmeMeta)}`;
@@ -191,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 3. Nível de Serviço (SLA) (Maior é melhor)
         document.getElementById('kpi-sla').textContent = `${slaValue.toFixed(2)}%`;
         if (goals.slaMeta) {
             document.getElementById('kpi-meta-sla').textContent = `Meta: ${goals.slaMeta.toFixed(2)}%`;
@@ -201,8 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 slaCard.classList.add('kpi-bad');
             }
         }
-        
-        // 4. Abandono (Menor é melhor)
+
         document.getElementById('kpi-abandonment').textContent = `${abandonmentValue.toFixed(2)}%`;
         if (goals.abandonoPercentMeta) {
             document.getElementById('kpi-meta-abandonment').textContent = `Meta: < ${goals.abandonoPercentMeta.toFixed(2)}%`;
@@ -226,13 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
             tension: 0.1
         }];
 
-        // Adiciona a linha de meta se existir para o cliente selecionado
+
         if (goals.slaMeta) {
             datasets.push({
                 label: `Meta SLA (${goals.slaMeta}%)`,
                 data: Array(labels.length).fill(goals.slaMeta),
                 borderColor: '#e0526e',
-                borderDash: [5, 5], // Linha tracejada
+                borderDash: [5, 5], 
                 fill: false,
                 pointRadius: 0
             });
@@ -248,8 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
-    // Função utilitária para formatar segundos em MM:SS
+
     function formatTime(totalSeconds) {
         if (isNaN(totalSeconds) || totalSeconds < 0) return '00:00';
         const minutes = Math.floor(totalSeconds / 60);
@@ -261,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (volumeChartInstance) volumeChartInstance.destroy();
 
         volumeChartInstance = new Chart(ctx, {
-            type: 'bar', // Mantém o tipo barra
+            type: 'bar', 
             data: {
                 labels: labels,
                 datasets: [
@@ -286,8 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true,
                 plugins: { title: { display: true, text: 'Volume de Chamadas (Recebidas x Atendidas x Abandonadas)' } },
                 scales: { 
-                    x: { stacked: false }, // ALTERADO DE true para false (ou removido)
-                    y: { stacked: false, beginAtZero: true } // ALTERADO DE true para false (ou removido)
+                    x: { stacked: false }, 
+                    y: { stacked: false, beginAtZero: true }
                 }
             }
         });
@@ -300,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             {
                 label: 'TMA Diário',
                 data: tmaData,
-                borderColor: '#007bff', // Azul diferente para diferenciar
+                borderColor: '#007bff', 
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 fill: false,
                 tension: 0.1
@@ -308,14 +291,13 @@ document.addEventListener('DOMContentLoaded', () => {
             {
                 label: 'TME Diário',
                 data: tmeData,
-                borderColor: '#ffc107', // Amarelo/Laranja
+                borderColor: '#ffc107',
                 backgroundColor: 'rgba(255, 193, 7, 0.1)',
                 fill: false,
                 tension: 0.1
             }
         ];
 
-        // Adiciona linhas de meta se existirem
         if (goals.tmaMeta) {
             datasets.push({
                 label: `Meta TMA (${formatTime(goals.tmaMeta)})`,
@@ -347,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                // Formata o tooltip para MM:SS
                                 return `${context.dataset.label}: ${formatTime(context.raw)}`;
                             }
                         }
@@ -358,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                // Formata o eixo Y para MM:SS
                                 return formatTime(value);
                             }
                         }
