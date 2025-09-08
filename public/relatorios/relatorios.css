@@ -1,0 +1,91 @@
+/* Estilo base para a página de relatórios */
+:root {
+    --maida-azul: #224aa2;
+    --maida-rosa: #ff6b8b;
+    --texto-escuro: #333;
+    --cinza-claro: #f4f7fc;
+    --branco: #ffffff;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--cinza-claro);
+    color: var(--texto-escuro);
+    margin: 0;
+}
+
+.page-header {
+    background-color: var(--maida-azul);
+    color: var(--branco);
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+}
+
+.back-button {
+    color: var(--branco);
+    text-decoration: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 8px 15px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.content-area {
+    padding: 30px;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    background-color: var(--branco);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.filter-group label {
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.filter-group input[type="date"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+#generate-report-btn {
+    background-color: var(--maida-rosa);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+#generate-report-btn:hover {
+    background-color: #e0526e;
+}
+
+.chart-container {
+    background-color: var(--branco);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}

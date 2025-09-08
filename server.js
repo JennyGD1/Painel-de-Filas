@@ -38,6 +38,51 @@ const gruposDeFila = [
 app.use(cors());
 app.use(express.static('public'));
 
+app.get('/api/reports/sla', async (req, res) => {
+    // Pega os parâmetros de data que virão do frontend
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ error: 'Data inicial e data final são obrigatórias.' });
+    }
+    
+    // Cria uma chave de cache única para esta combinação de datas
+    const cacheKey = `report_sla_${startDate}_${endDate}`;
+    if (reportsCache.has(cacheKey)) {
+        return res.json(reportsCache.get(cacheKey));
+    }
+
+    // Formata as datas para o padrão da API (ex: 2025-09-08)
+    // A API de relatórios parece aceitar datas simples, mas vamos garantir o fuso UTC-3.
+    const isoStartDate = `${startDate}T03:00:00.000Z`;
+    // Para a data final, pegamos o final do dia (23:59:59), que em UTC-3 é 02:59:59 do dia seguinte.
+    const tempEndDate = new Date(endDate);
+    tempEndDate.setDate(tempEndDate.getDate() + 1);
+    const isoEndDate = `${tempEndDate.toISOString().split('T')[0]}T02:59:59.999Z`;
+
+    const reportParams = {
+        start_date: isoStartDate,
+        end_date: isoEndDate,
+        entity: 'queue_groups', // Pode mudar para 'queues' se quiser filtrar por fila individual
+        queue_group_ids: 'all', // Pega de todos os grupos por enquanto
+        group_by: 'day', // Agrupa os dados por dia
+        start_hour: '07',
+        end_hour: '19'
+    };
+
+    try {
+        const headers = { 'token': EVOLUX_API_TOKEN, 'User-Agent': 'Mozilla/5.0' };
+        const response = await axios.get(EVOLUX_REPORTS_URL, { headers, params: reportParams });
+        
+        // Salva no cache antes de retornar
+        reportsCache.set(cacheKey, response.data);
+        res.json(response.data);
+
+    } catch (error) {
+        console.error(`Erro na API de Relatório SLA:`, error.response ? error.response.data : error.message);
+        res.status(500).json({ error: 'Falha ao buscar relatório de SLA' });
+    }
+});
 app.get('/api/filas', async (req, res) => {
     const cacheKey = 'dados_em_tempo_real';
     if (realtimeCache.has(cacheKey)) {

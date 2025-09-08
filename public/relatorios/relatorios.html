@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Avançada - Relatórios</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="relatorios.css">
+</head>
+<body>
+    <header class="page-header">
+        <h1>Relatórios de Desempenho</h1>
+        <a href="/" class="back-button">Voltar ao Menu</a>
+    </header>
+
+    <main class="content-area">
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label for="start-date">Data Inicial:</label>
+                <input type="date" id="start-date">
+            </div>
+            <div class="filter-group">
+                <label for="end-date">Data Final:</label>
+                <input type="date" id="end-date">
+            </div>
+            <button id="generate-report-btn">Gerar Relatório</button>
+        </div>
+
+        <div class="chart-container" id="chart-container-sla">
+            <canvas id="slaChart"></canvas>
+        </div>
+    </main>
+
+    <script src="relatorios.js"></script>
+</body>
+</html>
